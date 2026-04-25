@@ -1,7 +1,7 @@
 import AddMenu from './AddMenu';
 import styles from './Header.module.css';
 
-export default function Header({ user, addMenuItems }) {
+export default function Header({ user, addMenuItems, view, onViewChange }) {
   return (
     <header className={styles.header}>
       <div className={styles.left}>
@@ -22,6 +22,15 @@ export default function Header({ user, addMenuItems }) {
         <span className={styles.title}>Pulse</span>
       </div>
       <div className={styles.right}>
+        {onViewChange && (
+          <button
+            type="button"
+            className={`${styles.navLink} ${view === 'history' ? styles.navLinkActive : ''}`}
+            onClick={() => onViewChange(view === 'history' ? 'dashboard' : 'history')}
+          >
+            {view === 'history' ? 'Back to dashboard' : 'Medical History'}
+          </button>
+        )}
         {addMenuItems && <AddMenu items={addMenuItems} />}
         <span className={styles.avatar}>{user.initials}</span>
         <span className={styles.userName}>{user.name}</span>
