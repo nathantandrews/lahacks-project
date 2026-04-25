@@ -1,0 +1,158 @@
+.section {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.composer {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.input {
+  flex: 1;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font: inherit;
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4a78c4;
+  box-shadow: 0 0 0 3px rgba(74, 120, 196, 0.15);
+}
+
+.addButton {
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: #2f3a52;
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  background: #1f283b;
+}
+
+.addButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.itemBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemText {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.itemMeta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.itemActions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+}
+
+.iconButton {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.secondaryButton {
+  padding: 6px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}

@@ -145,6 +145,12 @@ export const notes = {
   ethan: [],
 };
 
+export const personalNotes = {
+  margaret: [],
+  david: [],
+  ethan: [],
+};
+
 export const eventLegend = [
   { type: 'medication',  label: 'Medication' },
   { type: 'appointment', label: 'Appointment' },
