@@ -20,6 +20,14 @@ async def get_patient(patient_id: str):
     return doc
 
 
+@router.get("/{patient_id}/conditions", response_model=list[dict])
+async def get_patient_conditions(patient_id: str):
+    doc = await patients_col().find_one({"id": patient_id}, {"_id": 0, "conditions": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return doc.get("conditions", [])
+
+
 @router.post("/", response_model=dict, status_code=201)
 async def create_patient(body: PatientCreate):
     new_id = body.fullName.lower().replace(" ", "_") + "_" + uuid.uuid4().hex[:4]

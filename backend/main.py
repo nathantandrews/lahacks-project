@@ -35,11 +35,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(patients.router)
-app.include_router(medications.router)
-app.include_router(events.router)
-app.include_router(notes.router)
-app.include_router(ai.router)
+app.include_router(patients.router, prefix="/api")
+app.include_router(medications.router, prefix="/api")
+app.include_router(events.router, prefix="/api")
+app.include_router(notes.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 
 @app.get("/", tags=["health"])

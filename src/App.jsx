@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Header from './components/Header';
 import PatientTabs from './components/PatientTabs';
 import PatientSummary from './components/PatientSummary';
@@ -59,12 +59,6 @@ export default function App() {
   const [view, setView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
 
-  // Loading states are essential for a good UX
-  const [loading, setLoading] = useState(true);
-  const [medications, setMedications] = useState([]);
-  const [conditions, setConditions] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [notes, setNotes] = useState([]);
   // App state — initialized from mockData, mutable via the four add forms.
   const [medications, setMedications] = useState(initialMedications);
   const [conditions, setConditions] = useState(initialConditions);
@@ -74,7 +68,6 @@ export default function App() {
 
   useEffect(() => {
     async function fetchData() {
-      setLoading(true);
       try {
         // Fetch all data for the selected patient
         // Assuming your FastAPI endpoints are: /api/patients/{id}/medications, etc.
@@ -84,17 +77,17 @@ export default function App() {
           fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events`)
         ]);
 
-        const meds = await medRes.json();
-        const conds = await condRes.json();
-        const evs = await eventRes.json();
+        if (medRes.ok && condRes.ok && eventRes.ok) {
+          const meds = await medRes.json();
+          const conds = await condRes.json();
+          const evs = await eventRes.json();
 
-        setMedications(meds);
-        setConditions(conds);
-        setEvents(evs);
+          setMedications(prev => ({ ...prev, [selectedPatientId]: meds }));
+          setConditions(prev => ({ ...prev, [selectedPatientId]: conds }));
+          setEvents(prev => ({ ...prev, [selectedPatientId]: evs }));
+        }
       } catch (err) {
         console.error("Failed to fetch data", err);
-      } finally {
-        setLoading(false);
       }
     }
     fetchData();
@@ -138,7 +131,27 @@ export default function App() {
     }));
     closeModal();
   };
-  const addMedication = addToPatient(setMedications);
+  const addMedication = async (newMed) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMed),
+      });
+      
+      if (response.ok) {
+        const savedMed = await response.json();
+        // Update local state to reflect the new data from DB
+        setMedications((prev) => ({
+          ...prev,
+          [selectedPatientId]: [...(prev[selectedPatientId] || []), savedMed]
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving medication:", error);
+    }
+  };
   const addCondition = addToPatient(setConditions);
   const addEvent = addToPatient(setEvents);
 
