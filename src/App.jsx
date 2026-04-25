@@ -59,12 +59,46 @@ export default function App() {
   const [view, setView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
 
+  // Loading states are essential for a good UX
+  const [loading, setLoading] = useState(true);
+  const [medications, setMedications] = useState([]);
+  const [conditions, setConditions] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [notes, setNotes] = useState([]);
   // App state — initialized from mockData, mutable via the four add forms.
   const [medications, setMedications] = useState(initialMedications);
   const [conditions, setConditions] = useState(initialConditions);
   const [events, setEvents] = useState(initialEvents);
   const [notes, setNotes] = useState(initialNotes);
   const [personalNotes, setPersonalNotes] = useState(initialPersonalNotes);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        // Fetch all data for the selected patient
+        // Assuming your FastAPI endpoints are: /api/patients/{id}/medications, etc.
+        const [medRes, condRes, eventRes] = await Promise.all([
+          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/medications`),
+          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/conditions`),
+          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events`)
+        ]);
+
+        const meds = await medRes.json();
+        const conds = await condRes.json();
+        const evs = await eventRes.json();
+
+        setMedications(meds);
+        setConditions(conds);
+        setEvents(evs);
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [selectedPatientId]);
 
   // Which modal is open: null | 'medication' | 'condition' | 'note' | 'event'
   const [openModal, setOpenModal] = useState(null);

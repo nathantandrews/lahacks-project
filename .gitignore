@@ -1,3 +1,6 @@
+__pycache__
+.postman
+postman
 # Logs
 logs
 *.log
