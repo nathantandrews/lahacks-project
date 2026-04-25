@@ -109,9 +109,26 @@ def _format_block(patient: dict, meds: list, notes: list, events: list) -> str:
     )
 
 
+def _is_meaningful_note_body(body: str) -> bool:
+    """
+    Return True only if the note body contains real clinical text.
+    Rejects: empty strings, bare filenames (e.g. "note.pdf"), very short blobs.
+    """
+    body = body.strip()
+    if len(body) < 30:
+        return False
+    # Looks like just a filename
+    if body.lower().endswith((".pdf", ".png", ".jpg", ".jpeg", ".webp")):
+        return False
+    # Contains at least one space (filenames usually don't)
+    if " " not in body:
+        return False
+    return True
+
+
 async def generate_weekly_summary(patient: dict, notes: list[dict]) -> dict:
     """
-    Synthesize all of a patient's doctor notes into a structured weekly summary.
+    Synthesize a patient's doctor notes into a structured weekly summary.
     Returns: { summary, action_items, concerns, vitals }
     """
     import re as _re
@@ -126,35 +143,55 @@ async def generate_weekly_summary(patient: dict, notes: list[dict]) -> dict:
         for c in patient.get("conditions", [])
     ) or "not specified"
 
-    # Build the notes block — only include notes that have actual body text
-    valid_notes = [n for n in notes if n.get("body", "").strip()]
+    # Only include notes with real clinical content — skip PDF-upload failures,
+    # empty bodies, and bare filenames
+    valid_notes = [
+        n for n in notes
+        if _is_meaningful_note_body(n.get("body", ""))
+    ]
+
     if not valid_notes:
         return {}
 
     notes_block = "\n\n".join(
-        f"--- Note {i+1} ({n.get('author', 'Doctor')}, {n.get('date', 'this week')}) ---\n{n.get('body', '').strip()}"
+        f"=== Note {i+1} | {n.get('author', 'Doctor')} | {n.get('date', 'this week')} ===\n{n.get('body', '').strip()}"
         for i, n in enumerate(valid_notes)
     )
 
-    system = """You are a medical summarization assistant for caregivers. Your job is to READ all doctor notes and produce a SYNTHESIZED summary — not a copy or quote of any single note.
+    # Single-note vs multi-note prompts — single note needs different framing
+    # to avoid the model just paraphrasing the whole thing
+    if len(valid_notes) == 1:
+        task = (
+            "Extract the 3-5 most important caregiver actions and warnings from this note. "
+            "Write the summary as ONE sentence describing the patient's overall health focus this week "
+            "(do NOT list or repeat the instructions — just give the big picture). "
+            "Then list the specific actions, concerns, and vitals separately."
+        )
+    else:
+        task = (
+            f"Synthesize these {len(valid_notes)} notes into a unified summary. "
+            "The summary should be 2 sentences capturing the overall health picture across ALL notes. "
+            "Do NOT focus on just one note. Combine and deduplicate the action items and concerns."
+        )
 
-STRICT RULES:
-- The "summary" must be YOUR OWN 2-3 sentence synthesis written in plain English for a non-medical caregiver.
-- Do NOT copy or quote any sentence verbatim from the notes.
-- Combine insights from ALL notes into unified, actionable output.
-- "action_items" = specific things the caregiver must DO this week (e.g. "Check blood pressure every morning and record it").
-- "concerns" = symptoms or signs the caregiver should WATCH FOR (e.g. "Ankle swelling or puffiness in feet").
-- "vitals" = specific monitoring tasks (e.g. "Log systolic blood pressure daily; call doctor if above 140").
-- Return ONLY a raw JSON object. No markdown, no code fences, no explanation — just the JSON.
-
-EXAMPLE OUTPUT FORMAT:
-{"summary":"[patient] is being closely monitored for [condition] this week. The doctor has flagged [key concern] as the primary focus, and [secondary issue] requires daily tracking.","action_items":["Task 1","Task 2"],"concerns":["Warning sign 1","Warning sign 2"],"vitals":["Monitoring instruction 1"]}"""
+    system = (
+        "You are a medical note summarization engine for caregivers. "
+        "Your output is a JSON object. You must follow the rules exactly.\n\n"
+        "RULES:\n"
+        "1. The 'summary' field must be your OWN sentence(s) — never copy text from the notes.\n"
+        "2. 'action_items' = concrete tasks for the caregiver to do this week.\n"
+        "3. 'concerns' = symptoms or warning signs to watch for.\n"
+        "4. 'vitals' = specific measurements to track (include thresholds if given).\n"
+        "5. Each list item must be one clear sentence — no bullet symbols, no dashes.\n"
+        "6. Return ONLY the raw JSON object. No markdown, no code fences, no preamble.\n\n"
+        'OUTPUT FORMAT: {"summary":"...","action_items":["..."],"concerns":["..."],"vitals":["..."]}'
+    )
 
     user = (
         f"Patient: {name}\n"
-        f"Known conditions: {conditions}\n\n"
-        f"Doctor's notes to synthesize:\n\n{notes_block}\n\n"
-        "Now write the JSON summary. Remember: synthesize across ALL notes — do not copy any sentence verbatim."
+        f"Active conditions: {conditions}\n\n"
+        f"Doctor notes:\n{notes_block}\n\n"
+        f"{task}"
     )
 
     raw = await call_asi1(
@@ -162,31 +199,29 @@ EXAMPLE OUTPUT FORMAT:
             {"role": "system", "content": system},
             {"role": "user",   "content": user},
         ],
-        max_tokens=500,
-        temperature=0.3,
+        max_tokens=450,
+        temperature=0.2,
     )
 
-    # Strip any accidental markdown fences and parse
+    # Strip markdown fences if present
     clean = _re.sub(r"```(?:json)?|```", "", raw).strip()
 
-    # Sometimes the model wraps with extra text before/after the JSON
+    # Extract just the JSON object in case the model added preamble text
     json_match = _re.search(r'\{.*\}', clean, _re.DOTALL)
     if json_match:
         clean = json_match.group(0)
 
     try:
         result = _json.loads(clean)
-        # Validate expected keys are present
         return {
             "summary":      result.get("summary", ""),
-            "action_items": result.get("action_items", []),
-            "concerns":     result.get("concerns", []),
-            "vitals":       result.get("vitals", []),
+            "action_items": [a for a in result.get("action_items", []) if a],
+            "concerns":     [c for c in result.get("concerns", []) if c],
+            "vitals":       [v for v in result.get("vitals", []) if v],
         }
     except Exception:
-        # Last resort: return a clean fallback rather than raw note text
         return {
-            "summary": f"Your doctor has left {len(valid_notes)} note(s) this week. Please review them below.",
+            "summary": f"Review the {len(valid_notes)} doctor note(s) below for this week's care instructions.",
             "action_items": [],
             "concerns": [],
             "vitals": [],

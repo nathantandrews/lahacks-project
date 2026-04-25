@@ -3,15 +3,17 @@ import styles from './DoctorNote.module.css';
 
 function SourceNotes({ sources }) {
   const [expanded, setExpanded] = useState(false);
-  if (!sources?.length) return null;
+  // Only show sources that have real text content
+  const readable = (sources || []).filter(s => s.body && s.body.trim().length >= 30);
+  if (!readable.length) return null;
   return (
     <div className={styles.sources}>
       <button className={styles.sourcesToggle} onClick={() => setExpanded(v => !v)}>
-        {expanded ? '▾' : '▸'} {sources.length} source note{sources.length > 1 ? 's' : ''}
+        {expanded ? '▾' : '▸'} {readable.length} source note{readable.length > 1 ? 's' : ''}
       </button>
       {expanded && (
         <ul className={styles.sourceList}>
-          {sources.map((s, i) => (
+          {readable.map((s, i) => (
             <li key={i} className={styles.sourceItem}>
               <span className={styles.sourceMeta}>{s.author}{s.date ? ` · ${s.date}` : ''}</span>
               <span className={styles.sourceBody}>{s.body}</span>

@@ -203,9 +203,11 @@ async def _build_and_cache_summary(patient_id: str) -> dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "note_count": len(notes),
         "structured": structured,
+        # Only include sources with real text — skip PDF uploads that failed OCR
         "sources": [
-            {"author": n.get("author", ""), "date": n.get("date", ""), "body": n.get("body", "")[:200]}
+            {"author": n.get("author", ""), "date": n.get("date", ""), "body": n.get("body", "")[:300]}
             for n in notes
+            if n.get("body", "").strip() and len(n.get("body", "").strip()) >= 30
         ],
     }
 
