@@ -126,7 +126,11 @@ async def seed_mock_data():
             "author": "Dr. Chen",
             "date": "04/22",
             "body": "Watch for swelling in ankles — may indicate fluid retention. Check blood pressure daily this week and log readings. Schedule follow-up if systolic stays above 140.",
-            "structured": {},
+            "structured": {
+                "summary": "Check blood pressure daily; watch for ankle swelling (fluid retention). Follow up if systolic > 140.",
+                "vitals": "Daily BP log",
+                "concerns": "Ankle swelling"
+            },
         })
 
     if await db.events.count_documents({}) == 0:
@@ -171,3 +175,31 @@ async def seed_mock_data():
             {"patient_id": "margaret", "id": "e38", "date": "2026-04-26", "time": "18:00", "title": "Dinner meds", "type": "medication"},
             {"patient_id": "margaret", "id": "e39", "date": "2026-04-26", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
         ])
+
+    if await db["visit-summaries"].count_documents({}) == 0:
+        await db["visit-summaries"].insert_many([
+            {
+                "patient_id": "margaret",
+                "id": "vs1",
+                "date": "2026-04-15",
+                "doctor": "Dr. Aris",
+                "location": "Northside Cardiology",
+                "reason": "Quarterly Heart Checkup",
+                "summary": "Patient reports mild fatigue. BP slightly elevated at 142/88. EKG shows normal rhythm. Adjusted Lisinopril dose.",
+                "followUp": "Blood work in 2 weeks. Return for follow-up in 3 months.",
+                "createdAt": "2026-04-15T10:00:00Z"
+            },
+            {
+                "patient_id": "margaret",
+                "id": "vs2",
+                "date": "2026-03-10",
+                "doctor": "Dr. Chen",
+                "location": "City General Health",
+                "reason": "Diabetes Management",
+                "summary": "A1C stable at 6.8. Patient managing diet well. Continuing Metformin 500mg.",
+                "followUp": "Annual eye exam.",
+                "createdAt": "2026-03-10T14:30:00Z"
+            }
+        ])
+
+    print("Database seeding completed.")

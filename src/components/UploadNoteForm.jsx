@@ -23,10 +23,12 @@ function readAsDataUrl(file) {
   });
 }
 
-export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
+export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loading }) {
   const [author, setAuthor] = useState('Dr. Chen');
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState(null);
@@ -104,18 +106,19 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
     e.target.value = '';
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return;
-    onSubmit({
-      id: `n-${Date.now()}`,
-      weekOf: isoMondayOf(currentDate),
-      author: author.trim() || 'Doctor',
-      date: shortDate(new Date()),
-      fileName: file.name,
-      ...(previewUrl ? { imageUrl: previewUrl } : {}),
-      body: `Attached: ${file.name}`,
-    });
+    if (!file || loading) return;
+    setUploadError(null);
+    try {
+      await onSubmit({
+        file,
+        author: author.trim() || 'Doctor',
+        weekOf: isoMondayOf(currentDate),
+      });
+    } catch (err) {
+      setUploadError(err.message);
+    }
   };
 
   if (cameraOpen) {
@@ -135,12 +138,12 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
           )}
         </div>
         <div className={styles.actions}>
-          <button type="button" className={styles.cancel} onClick={closeCamera}>Cancel</button>
+          <button type="button" className={styles.cancel} onClick={closeCamera} disabled={loading}>Cancel</button>
           <button
             type="button"
             className={styles.submit}
             onClick={capturePhoto}
-            disabled={!!cameraError}
+            disabled={!!cameraError || loading}
           >
             Capture
           </button>
@@ -158,6 +161,7 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
           placeholder="Dr. Chen"
+          disabled={loading}
         />
       </div>
       <div className={styles.field}>
@@ -167,6 +171,7 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
             type="button"
             className={styles.uploadOption}
             onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
           >
             <span className={styles.uploadIcon} aria-hidden>📄</span>
             Upload a file
@@ -175,6 +180,7 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
             type="button"
             className={styles.uploadOption}
             onClick={openCamera}
+            disabled={loading}
           >
             <span className={styles.uploadIcon} aria-hidden>📷</span>
             Take photo
@@ -198,20 +204,35 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel }) {
               <span className={styles.uploadIcon} aria-hidden>📄</span>
             )}
             <span className={styles.uploadName}>{file.name}</span>
-            <button
-              type="button"
-              className={styles.uploadRemove}
-              onClick={() => { setFile(null); setPreviewUrl(null); }}
-            >
-              Remove
-            </button>
+            {!loading && (
+              <button
+                type="button"
+                className={styles.uploadRemove}
+                onClick={() => { setFile(null); setPreviewUrl(null); }}
+              >
+                Remove
+              </button>
+            )}
           </div>
         </div>
       )}
       <div className={styles.actions}>
-        <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit} disabled={!file}>Upload note</button>
+        <button type="button" className={styles.cancel} onClick={onCancel} disabled={loading}>Cancel</button>
+        <button type="submit" className={styles.submit} disabled={!file || loading}>
+          {loading ? 'Analyzing with AI...' : 'Upload note'}
+        </button>
       </div>
+      {uploadError && (
+        <div style={{ marginTop: '12px', padding: '8px', borderRadius: '6px', background: '#fff5f5', color: '#c53030', fontSize: '12px', textAlign: 'center', border: '1px solid #feb2b2' }}>
+          <strong>Error:</strong> {uploadError}
+        </div>
+      )}
+      {loading && (
+        <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '13px', color: '#4a78c4' }}>
+          This may take a moment while we OCR and analyze the document...
+        </div>
+      )}
     </form>
   );
 }
+

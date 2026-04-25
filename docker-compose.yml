@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pulse-net
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB_NAME=caregiver_hub
+      - CAREGIVER_AGENT_URL=http://agent:8080
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - pulse-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - pulse-net
+
+networks:
+  pulse-net:
+    driver: bridge
+
+volumes:
+  mongodb_data:

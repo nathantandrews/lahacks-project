@@ -18,7 +18,26 @@ export default function DoctorNote({ note }) {
             <span>{note.fileName}</span>
           </div>
         )}
-        {note.body && <p className={styles.text}>{note.body}</p>}
+        {note.structured?.summary ? (
+          <p className={styles.text}>{note.structured.summary}</p>
+        ) : note.body && (
+          <p className={styles.text}>{note.body}</p>
+        )}
+        
+        {note.structured && Object.keys(note.structured).filter(k => k !== 'summary').length > 0 && (
+          <div className={styles.analysis}>
+            <div className={styles.analysisTitle}>AI Insights & Details</div>
+            <ul className={styles.analysisList}>
+              {Object.entries(note.structured)
+                .filter(([key]) => key !== 'summary')
+                .map(([key, value]) => (
+                  <li key={key}>
+                    <strong>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
       </div>
     </aside>
   );

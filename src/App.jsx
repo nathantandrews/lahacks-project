@@ -69,6 +69,7 @@ export default function App() {
   const [events, setEvents] = useState(initialEvents);
   const [notes, setNotes] = useState(initialNotes);
   const [personalNotes, setPersonalNotes] = useState(initialPersonalNotes);
+  const [history, setHistory] = useState({});
 
   useEffect(() => {
     async function fetchData() {
@@ -99,6 +100,10 @@ export default function App() {
         { url: `${base}/patients/${selectedPatientId}/personal-notes`, setter: setPersonalNotes },
       ];
 
+      if (page === 'history') {
+        fetches.push({ url: `${base}/patients/${selectedPatientId}/history`, setter: setHistory });
+      }
+
       await Promise.all(
         fetches.map(async ({ url, setter }) => {
           try {
@@ -114,7 +119,7 @@ export default function App() {
       );
     }
     fetchData();
-  }, [selectedPatientId]);
+  }, [selectedPatientId, page]);
 
   // Which modal is open: null | 'medication' | 'condition' | 'note' | 'event'
   const [openModal, setOpenModal] = useState(null);
@@ -255,24 +260,50 @@ export default function App() {
     setEditingMedication(med);
     setOpenModal('medication');
   };
-  const addNote = async (note) => {
+  const [isUploadingNote, setIsUploadingNote] = useState(false);
+
+  const addNote = async ({ file, author, weekOf }) => {
+    setIsUploadingNote(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/notes`, {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('author', author);
+      formData.append('week_of', weekOf);
+
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/notes/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(note),
+        body: formData,
       });
 
       if (response.ok) {
         const savedNote = await response.json();
+        
+        // Update dashboard notes
         setNotes((prev) => ({
           ...prev,
           [selectedPatientId]: [savedNote, ...(prev[selectedPatientId] || [])],
         }));
+
+        // Update history timeline
+        setHistory((prev) => ({
+          ...prev,
+          [selectedPatientId]: [
+            { ...savedNote, _category: 'doctor_note', _sortDate: savedNote.weekOf },
+            ...(prev[selectedPatientId] || [])
+          ],
+        }));
+
         closeModal();
+        return true;
+      } else {
+        const err = await response.json();
+        throw new Error(err.detail || 'Upload failed');
       }
     } catch (error) {
-      console.error("Error saving note:", error);
+      console.error("Error uploading note:", error);
+      throw error;
+    } finally {
+      setIsUploadingNote(false);
     }
   };
 
@@ -421,7 +452,7 @@ export default function App() {
           patient ? (
             <MedicalHistory
               patient={patient}
-              notes={notes[selectedPatientId] || []}
+              items={history[selectedPatientId] || []}
             />
           ) : (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -513,7 +544,7 @@ export default function App() {
         <AddConditionForm onSubmit={addCondition} onCancel={closeModal} />
       </Modal>
       <Modal open={openModal === 'note'} title="Upload doctor's note" onClose={closeModal}>
-        <UploadNoteForm currentDate={currentDate} onSubmit={addNote} onCancel={closeModal} />
+        <UploadNoteForm currentDate={currentDate} onSubmit={addNote} onCancel={closeModal} loading={isUploadingNote} />
       </Modal>
       <Modal open={openModal === 'event'} title="Add event" onClose={closeModal}>
         <AddEventForm currentDate={currentDate} onSubmit={addEvent} onCancel={closeModal} />

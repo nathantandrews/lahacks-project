@@ -116,3 +116,42 @@
   font-size: var(--text-sm);
   color: #3d5a82;
 }
+
+.analysis {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(74, 120, 196, 0.2);
+}
+
+.analysisTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #4a78c4;
+  margin-bottom: 4px;
+}
+
+.analysisList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.analysisList li {
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: #2f4f7c;
+}
+
+.followUp {
+  margin-top: 12px;
+  padding: 10px;
+  background: rgba(74, 120, 196, 0.05);
+  border-left: 3px solid #4a78c4;
+  font-size: var(--text-sm);
+  color: #2f4f7c;
+}

@@ -9,7 +9,7 @@ from models.note import DoctorNote, DoctorNoteCreate
 
 router = APIRouter(prefix="/patients", tags=["notes"])
 
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
 
 
 @router.get("/{patient_id}/notes", response_model=list[dict])
@@ -41,20 +41,30 @@ async def upload_note_image(
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=415,
-            detail=f"Unsupported file type: {file.content_type}. Upload JPEG, PNG, or WebP.",
+            detail=f"Unsupported file type: {file.content_type}. Upload JPEG, PNG, WebP, or PDF.",
         )
 
     raw_bytes = await file.read()
+    raw_text = ""
 
-    # OCR the image
+    # OCR the image or PDF
     try:
-        image = Image.open(BytesIO(raw_bytes))
-        raw_text = pytesseract.image_to_string(image).strip()
+        if file.content_type == "application/pdf":
+            import pdf2image
+            # Convert PDF pages to images (requires poppler-utils)
+            images = pdf2image.convert_from_bytes(raw_bytes)
+            for img in images:
+                page_text = pytesseract.image_to_string(img).strip()
+                if page_text:
+                    raw_text += page_text + "\n\n"
+        else:
+            image = Image.open(BytesIO(raw_bytes))
+            raw_text = pytesseract.image_to_string(image).strip()
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"OCR failed: {e}")
 
     if not raw_text:
-        raise HTTPException(status_code=422, detail="No text could be extracted from the image.")
+        raise HTTPException(status_code=422, detail="No text could be extracted from the document.")
 
     # Send to agent for structured analysis
     from services.agent_client import analyze_note
