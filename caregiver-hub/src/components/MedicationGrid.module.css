@@ -1,0 +1,65 @@
+/* MedicationGrid — responsive card grid above the calendar.
+   Uses `auto-fill` (not `auto-fit`) so card width stays consistent across
+   patients regardless of medication count: an empty slot stays empty rather
+   than stretching the remaining cards. */
+
+.section {
+  padding: 0 var(--space-5) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.header {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.detail {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.withFood {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: var(--event-meal-bg);
+  color: var(--event-meal);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.foodDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--event-meal);
+}

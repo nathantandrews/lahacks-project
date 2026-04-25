@@ -1,0 +1,117 @@
+/* CalendarGrid — Week view: time-column + 7 day-columns, color-coded events.
+   First grid row = corner + 7 day headers; subsequent rows = time label + 7 cells. */
+
+.grid {
+  display: grid;
+  grid-template-columns: 64px repeat(7, minmax(0, 1fr));
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cornerCell {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dayHeader {
+  text-align: center;
+  padding: var(--space-3) var(--space-2);
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dayHeader.today {
+  background: var(--bg-muted);
+}
+
+.dayName {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.dayNum {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeCell {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-2);
+  text-align: right;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cell {
+  padding: 4px;
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cell.todayCol {
+  background: var(--bg-muted);
+}
+
+/* Event blocks — left bar in the type's strong color, fill in the soft tint. */
+.event {
+  border-left: 3px solid;
+  border-radius: 4px;
+  padding: 4px 6px 4px 8px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.eventTitle {
+  font-weight: 500;
+}
+
+.eventSubtitle {
+  font-size: 10px;
+  opacity: 0.8;
+  margin-top: 1px;
+}
+
+.medication {
+  background: var(--event-medication-bg);
+  border-left-color: var(--event-medication);
+  color: var(--event-medication);
+}
+
+.appointment {
+  background: var(--event-appointment-bg);
+  border-left-color: var(--event-appointment);
+  color: var(--event-appointment);
+}
+
+.vitals {
+  background: var(--event-vitals-bg);
+  border-left-color: var(--event-vitals);
+  color: var(--event-vitals);
+}
+
+.activity {
+  background: var(--event-activity-bg);
+  border-left-color: var(--event-activity);
+  color: var(--event-activity);
+}
+
+.meal {
+  background: var(--event-meal-bg);
+  border-left-color: var(--event-meal);
+  color: var(--event-meal);
+}
+
+.lab {
+  background: var(--event-lab-bg);
+  border-left-color: var(--event-lab);
+  color: var(--event-lab);
+}

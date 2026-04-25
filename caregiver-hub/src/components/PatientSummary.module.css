@@ -1,0 +1,69 @@
+/* PatientSummary — patient identity + active condition chips, two columns.
+   Lives on the cream-tinted "patient info" band; chip tones come from tokens. */
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--space-8);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  background: var(--bg-muted);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+
+.name {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: var(--space-2);
+}
+
+.meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.diabetes {
+  background: var(--chip-diabetes-bg);
+  color: var(--chip-diabetes-fg);
+}
+
+.hypertension {
+  background: var(--chip-hypertension-bg);
+  color: var(--chip-hypertension-fg);
+}
+
+.ckd {
+  background: var(--chip-ckd-bg);
+  color: var(--chip-ckd-fg);
+}
+
+.ortho {
+  background: var(--chip-ortho-bg);
+  color: var(--chip-ortho-fg);
+}

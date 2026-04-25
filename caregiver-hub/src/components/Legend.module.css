@@ -1,0 +1,39 @@
+/* Legend — color-key row at the bottom of the calendar.
+   Each .swatch.<type> uses the matching --event-{type} color from tokens.css. */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  width: 16px;
+  height: 14px;
+  border-radius: 3px;
+  border-left: 3px solid;
+  display: inline-block;
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.medication  { background: var(--event-medication-bg);  border-left-color: var(--event-medication); }
+.appointment { background: var(--event-appointment-bg); border-left-color: var(--event-appointment); }
+.vitals      { background: var(--event-vitals-bg);      border-left-color: var(--event-vitals); }
+.activity    { background: var(--event-activity-bg);    border-left-color: var(--event-activity); }
+.meal        { background: var(--event-meal-bg);        border-left-color: var(--event-meal); }
+.lab         { background: var(--event-lab-bg);         border-left-color: var(--event-lab); }

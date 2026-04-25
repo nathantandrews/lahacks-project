@@ -1,0 +1,46 @@
+/* DoctorNote — soft-blue info callout above the calendar grid. */
+
+.note {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 var(--space-5) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-note);
+  border-radius: var(--radius-md);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #4a78c4;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, serif;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.body {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #2f4f7c;
+  margin-bottom: 2px;
+}
+
+.text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: #3d5a82;
+}

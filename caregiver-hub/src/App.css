@@ -1,0 +1,18 @@
+/* App-level layout. Component-specific styles live in each *.module.css. */
+
+.app {
+  min-height: 100vh;
+  padding: var(--space-6);
+  display: flex;
+  justify-content: center;
+}
+
+.app-card {
+  width: 100%;
+  max-width: 1080px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}

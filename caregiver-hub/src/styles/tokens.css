@@ -1,0 +1,72 @@
+:root {
+  /* Surface */
+  --bg-app: #f4f1ec;
+  --bg-card: #ffffff;
+  --bg-muted: #faf8f4;
+  --bg-note: #eaf2fb;
+
+  /* Text */
+  --text-primary: #1f2328;
+  --text-secondary: #5b6470;
+  --text-muted: #8a93a0;
+
+  /* Borders */
+  --border-subtle: #e6e3dd;
+  --border-strong: #d6d2cb;
+
+  /* Event type colors — used by chips, calendar blocks, legend */
+  --event-medication: #d8606a;
+  --event-medication-bg: #fdecee;
+  --event-appointment: #8b7fb8;
+  --event-appointment-bg: #ece8f4;
+  --event-vitals: #6f9bd1;
+  --event-vitals-bg: #e6eef8;
+  --event-activity: #6ba36f;
+  --event-activity-bg: #e7f1e6;
+  --event-meal: #c98a4b;
+  --event-meal-bg: #f8ecdc;
+  --event-lab: #4ea49b;
+  --event-lab-bg: #def0ee;
+
+  /* Condition chip colors */
+  --chip-diabetes-bg: #fbe7e6;
+  --chip-diabetes-fg: #b04a45;
+  --chip-hypertension-bg: #f6ecd9;
+  --chip-hypertension-fg: #8a6a30;
+  --chip-ckd-bg: #ece5f4;
+  --chip-ckd-fg: #6a5b9a;
+  --chip-ortho-bg: #def0ee;
+  --chip-ortho-fg: #38766f;
+
+  /* Patient avatar tints */
+  --avatar-margaret: #cdc4ed;
+  --avatar-david: #bfe0d8;
+  --avatar-ethan: #f2c9c9;
+  --avatar-user: #c9d6f0;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+
+  /* Shadow */
+  --shadow-card: 0 1px 2px rgba(20, 24, 32, 0.04), 0 1px 0 rgba(20, 24, 32, 0.02);
+}

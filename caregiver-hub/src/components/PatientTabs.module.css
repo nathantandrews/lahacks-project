@@ -1,0 +1,65 @@
+/* PatientTabs — horizontal tabs with colored initials avatar.
+   The active tab gets a thick underline; avatar background colors come from
+   inline styles set in PatientTabs.jsx (per-patient, defined in mockData.js). */
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom-color: var(--text-primary);
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  color: #2f3a52;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.add {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: -1px;
+}
+
+.add:hover {
+  color: var(--text-primary);
+}
