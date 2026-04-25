@@ -108,9 +108,13 @@ export default function App() {
         fetches.map(async ({ url, setter }) => {
           try {
             const res = await fetch(url);
-            if (res.ok) {
+            const contentType = res.headers.get("content-type");
+            if (res.ok && contentType && contentType.includes("application/json")) {
               const data = await res.json();
               setter(prev => ({ ...prev, [selectedPatientId]: data }));
+            } else {
+              const text = await res.text();
+              console.error(`Non-JSON response from ${url} [Status ${res.status}]:`, text);
             }
           } catch (err) {
             console.error(`Failed to fetch ${url}`, err);
