@@ -2,14 +2,14 @@
 
 .app {
   min-height: 100vh;
-  padding: var(--space-6);
+  padding: var(--space-2);
   display: flex;
   justify-content: center;
 }
 
 .app-card {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1600px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -33,12 +33,28 @@
   background: var(--bg-panel);
 }
 
+.splitter {
+  display: none;
+}
+
 @media (min-width: 960px) {
   .layout {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: var(--left-col, minmax(0, 5fr)) 6px minmax(0, 1fr);
   }
 
-  .layout-left {
-    border-right: 1px solid var(--border-subtle);
+  .splitter {
+    display: block;
+    cursor: col-resize;
+    background: var(--border-subtle);
+    border: none;
+    padding: 0;
+    margin: 0;
+    transition: background 0.15s;
+    user-select: none;
+  }
+
+  .splitter:hover,
+  .splitter.dragging {
+    background: var(--text-secondary);
   }
 }

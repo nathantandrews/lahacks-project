@@ -23,6 +23,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: wrap;
   margin-bottom: var(--space-2);
 }
 
@@ -38,6 +39,8 @@
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-card);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .addBtn:hover {

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import PatientTabs from './components/PatientTabs';
 import PatientSummary from './components/PatientSummary';
@@ -210,7 +210,25 @@ export default function App() {
       console.error("Error saving condition:", error);
     }
   };
-  const addEvent = addToPatient(setEvents);
+  const addEvent = async (newEvent) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEvent),
+      });
+      if (response.ok) {
+        const savedEvent = await response.json();
+        setEvents((prev) => ({
+          ...prev,
+          [selectedPatientId]: [...(prev[selectedPatientId] || []), savedEvent],
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving event:", error);
+    }
+  };
 
   const editMedication = (med) => {
     setMedications((prev) => ({
@@ -330,6 +348,50 @@ export default function App() {
     }
   };
 
+  const layoutRef = useRef(null);
+  const [leftWidth, setLeftWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('layout-left-width'));
+    return Number.isFinite(saved) && saved > 0 ? saved : null;
+  });
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    if (leftWidth != null) localStorage.setItem('layout-left-width', String(leftWidth));
+  }, [leftWidth]);
+
+  const onSplitterPointerDown = (e) => {
+    if (!layoutRef.current) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDragging(true);
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+      if (!layoutRef.current) return;
+      const rect = layoutRef.current.getBoundingClientRect();
+      const splitterWidth = 6;
+      const minLeft = 280;
+      const minRight = 360;
+      const max = rect.width - minRight - splitterWidth;
+      const next = Math.max(minLeft, Math.min(max, ev.clientX - rect.left));
+      setLeftWidth(next);
+    };
+    const onUp = () => {
+      setDragging(false);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
+  const onSplitterDoubleClick = () => setLeftWidth(null);
+
   const addMenuItems = [
     { label: 'Add condition', onSelect: () => setOpenModal('condition') },
     { label: 'Add medication', onSelect: () => setOpenModal('medication') },
@@ -347,7 +409,11 @@ export default function App() {
           onSelect={setSelectedPatientId}
           onAdd={() => setOpenModal('patient')}
         />
-        <div className="layout">
+        <div
+          className="layout"
+          ref={layoutRef}
+          style={leftWidth != null ? { '--left-col': `${leftWidth}px` } : undefined}
+        >
           {patient ? (
             <>
               <div className="layout-left">
@@ -370,6 +436,14 @@ export default function App() {
                   onToggleDone={togglePersonalNoteDone}
                 />
               </div>
+              <div
+                className={`splitter${dragging ? ' dragging' : ''}`}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize columns. Double-click to reset."
+                onPointerDown={onSplitterPointerDown}
+                onDoubleClick={onSplitterDoubleClick}
+              />
               <div className="layout-right">
                 <CalendarToolbar
                   rangeLabel={formatRange(currentDate, view)}
@@ -392,7 +466,7 @@ export default function App() {
               </div>
             </>
           ) : (
-            <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)' }}>
+            <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>
               {patients.length === 0 ? 'No patients yet. Add one above.' : 'Loading patient...'}
             </div>
           )}
