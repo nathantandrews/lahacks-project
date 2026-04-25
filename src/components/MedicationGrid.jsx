@@ -34,14 +34,16 @@ export default function MedicationGrid({
               </button>
             </div>
             <div className={styles.name}>{m.name}</div>
-            <div className={styles.detail}>
-              {m.dose} · {m.schedule}
+            <div className={styles.detailRow}>
+              <span className={styles.detail}>
+                {m.dose} · {m.schedule}
+              </span>
+              {m.withFood && (
+                <span className={styles.withFood}>
+                  <span className={styles.foodDot} aria-hidden /> With food
+                </span>
+              )}
             </div>
-            {m.withFood && (
-              <div className={styles.withFood}>
-                <span className={styles.foodDot} aria-hidden /> With food
-              </div>
-            )}
           </article>
         ))}
       </div>

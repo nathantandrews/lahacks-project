@@ -39,7 +39,7 @@
 
 @media (min-width: 960px) {
   .layout {
-    grid-template-columns: var(--left-col, minmax(0, 5fr)) 6px minmax(0, 1fr);
+    grid-template-columns: var(--left-col, minmax(0, 1fr)) 6px minmax(0, 2fr);
   }
 
   .splitter {

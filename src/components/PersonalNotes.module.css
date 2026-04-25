@@ -217,11 +217,14 @@
 }
 
 .reminderLabel {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   font-size: var(--text-xs);
   color: var(--text-muted);
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .reminderIcon {
@@ -240,6 +243,10 @@
   font: inherit;
   font-size: var(--text-xs);
   color: var(--text-primary);
+  flex: 1 1 130px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .reminderInput:focus {
