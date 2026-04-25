@@ -9,6 +9,19 @@
   padding: 0 var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-card);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
 }
 
 .tab {
@@ -21,6 +34,7 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   transition: color 120ms ease, border-color 120ms ease;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -58,6 +72,8 @@
   font-size: var(--text-sm);
   color: var(--text-muted);
   margin-bottom: -1px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .add:hover {
