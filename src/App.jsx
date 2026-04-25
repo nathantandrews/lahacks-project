@@ -25,7 +25,7 @@ import {
 } from './data/mockData';
 import './App.css';
 
-const TODAY_ISO = '2026-04-24';
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
 function formatRange(date, view) {
   if (view === 'day') {
