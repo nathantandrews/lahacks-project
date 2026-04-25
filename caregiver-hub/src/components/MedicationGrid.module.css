@@ -10,12 +10,34 @@
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.label {
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   text-transform: uppercase;
-  margin-bottom: var(--space-3);
+}
+
+.addBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+}
+
+.addBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
 }
 
 .grid {

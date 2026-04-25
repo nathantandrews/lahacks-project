@@ -1,10 +1,11 @@
 import styles from './MedicationGrid.module.css';
 
-export default function MedicationGrid({ medications }) {
+export default function MedicationGrid({ medications, onAddMedication }) {
   return (
     <section className={styles.section}>
       <div className={styles.header}>
-        CURRENT MEDICATIONS · {medications.length}
+        <span className={styles.label}>CURRENT MEDICATIONS · {medications.length}</span>
+        <button className={styles.addBtn} onClick={onAddMedication}>+ Add medication</button>
       </div>
       <div className={styles.grid}>
         {medications.map((m) => (

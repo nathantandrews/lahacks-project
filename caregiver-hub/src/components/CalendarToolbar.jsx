@@ -7,6 +7,8 @@ export default function CalendarToolbar({
   onPrev,
   onNext,
   onToday,
+  onAddEvent,
+  onUploadNote,
 }) {
   return (
     <div className={styles.toolbar}>
@@ -16,16 +18,20 @@ export default function CalendarToolbar({
         <button className={styles.navBtn} onClick={onNext} aria-label="Next">›</button>
         <button className={styles.todayBtn} onClick={onToday}>Today</button>
       </div>
-      <div className={styles.viewSwitch}>
-        {['month', 'week', 'day'].map((v) => (
-          <button
-            key={v}
-            className={`${styles.viewBtn} ${view === v ? styles.active : ''}`}
-            onClick={() => onViewChange(v)}
-          >
-            {v[0].toUpperCase() + v.slice(1)}
-          </button>
-        ))}
+      <div className={styles.right}>
+        <button className={styles.actionBtn} onClick={onUploadNote}>Upload doctor's note</button>
+        <button className={styles.actionBtn} onClick={onAddEvent}>+ Event</button>
+        <div className={styles.viewSwitch}>
+          {['month', 'week', 'day'].map((v) => (
+            <button
+              key={v}
+              className={`${styles.viewBtn} ${view === v ? styles.active : ''}`}
+              onClick={() => onViewChange(v)}
+            >
+              {v[0].toUpperCase() + v.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
