@@ -1,6 +1,11 @@
 import styles from './MedicationGrid.module.css';
 
-export default function MedicationGrid({ medications, onAddMedication }) {
+export default function MedicationGrid({
+  medications,
+  onAddMedication,
+  onEditMedication,
+  onDeleteMedication,
+}) {
   return (
     <section className={styles.section}>
       <div className={styles.header}>
@@ -10,6 +15,24 @@ export default function MedicationGrid({ medications, onAddMedication }) {
       <div className={styles.grid}>
         {medications.map((m) => (
           <article key={m.id} className={styles.card}>
+            <div className={styles.cardActions}>
+              <button
+                type="button"
+                className={styles.iconButton}
+                onClick={() => onEditMedication(m)}
+                aria-label={`Edit ${m.name}`}
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                className={styles.iconButton}
+                onClick={() => onDeleteMedication(m.id)}
+                aria-label={`Delete ${m.name}`}
+              >
+                ×
+              </button>
+            </div>
             <div className={styles.name}>{m.name}</div>
             <div className={styles.detail}>
               {m.dose} · {m.schedule}

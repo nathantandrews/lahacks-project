@@ -5,7 +5,7 @@
 
 .section {
   padding: 0 var(--space-5) var(--space-5);
-  background: var(--bg-muted);
+  background: transparent;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -47,10 +47,39 @@
 }
 
 .card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
+}
+
+.cardActions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 2px;
+}
+
+.iconButton {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
 }
 
 .name {

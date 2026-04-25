@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import styles from './Form.module.css';
 
-export default function AddMedicationForm({ onSubmit, onCancel }) {
-  const [name, setName] = useState('');
-  const [dose, setDose] = useState('');
-  const [schedule, setSchedule] = useState('');
-  const [withFood, setWithFood] = useState(false);
+export default function AddMedicationForm({ onSubmit, onCancel, initial }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [dose, setDose] = useState(initial?.dose || '');
+  const [schedule, setSchedule] = useState(initial?.schedule || '');
+  const [withFood, setWithFood] = useState(!!initial?.withFood);
+  const isEdit = !!initial;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
     onSubmit({
-      id: `m-${Date.now()}`,
+      id: initial?.id || `m-${Date.now()}`,
       name: name.trim(),
       dose: dose.trim(),
       schedule: schedule.trim(),
@@ -61,7 +62,9 @@ export default function AddMedicationForm({ onSubmit, onCancel }) {
       </label>
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit}>Add medication</button>
+        <button type="submit" className={styles.submit}>
+          {isEdit ? 'Save changes' : 'Add medication'}
+        </button>
       </div>
     </form>
   );

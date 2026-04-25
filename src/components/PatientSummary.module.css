@@ -6,7 +6,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: var(--space-8);
   padding: var(--space-5) var(--space-5) var(--space-4);
-  background: var(--bg-muted);
+  background: transparent;
 }
 
 .label {

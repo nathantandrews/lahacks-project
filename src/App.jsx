@@ -68,7 +68,12 @@ export default function App() {
 
   // Which modal is open: null | 'medication' | 'condition' | 'note' | 'event'
   const [openModal, setOpenModal] = useState(null);
-  const closeModal = () => setOpenModal(null);
+  // When set, the medication modal opens in edit mode for this medication.
+  const [editingMedication, setEditingMedication] = useState(null);
+  const closeModal = () => {
+    setOpenModal(null);
+    setEditingMedication(null);
+  };
 
   const patient = useMemo(
     () => patients.find((p) => p.id === selectedPatientId),
@@ -102,6 +107,29 @@ export default function App() {
   const addMedication = addToPatient(setMedications);
   const addCondition = addToPatient(setConditions);
   const addEvent = addToPatient(setEvents);
+
+  const editMedication = (med) => {
+    setMedications((prev) => ({
+      ...prev,
+      [selectedPatientId]: (prev[selectedPatientId] || []).map((m) =>
+        m.id === med.id ? med : m,
+      ),
+    }));
+    closeModal();
+  };
+  const deleteMedication = (id) => {
+    const med = (medications[selectedPatientId] || []).find((m) => m.id === id);
+    const label = med?.name ? `"${med.name}"` : 'this medication';
+    if (!window.confirm(`Delete ${label}? This can't be undone.`)) return;
+    setMedications((prev) => ({
+      ...prev,
+      [selectedPatientId]: (prev[selectedPatientId] || []).filter((m) => m.id !== id),
+    }));
+  };
+  const startEditMedication = (med) => {
+    setEditingMedication(med);
+    setOpenModal('medication');
+  };
   const addNote = (note) => {
     setNotes((prev) => ({
       ...prev,
@@ -122,11 +150,20 @@ export default function App() {
       [selectedPatientId]: (prev[selectedPatientId] || []).filter((n) => n.id !== id),
     }));
   };
-  const editPersonalNote = (id, body) => {
+  const editPersonalNote = (id, patch) => {
+    const fields = typeof patch === 'string' ? { body: patch } : patch;
     setPersonalNotes((prev) => ({
       ...prev,
       [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
-        n.id === id ? { ...n, body, updatedAt: new Date().toISOString() } : n,
+        n.id === id ? { ...n, ...fields, updatedAt: new Date().toISOString() } : n,
+      ),
+    }));
+  };
+  const togglePersonalNoteDone = (id) => {
+    setPersonalNotes((prev) => ({
+      ...prev,
+      [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
+        n.id === id ? { ...n, done: !n.done } : n,
       ),
     }));
   };
@@ -148,43 +185,61 @@ export default function App() {
           onSelect={setSelectedPatientId}
           onAdd={() => alert('Add patient — not implemented')}
         />
-        <PatientSummary
-          patient={patient}
-          conditions={conditions[selectedPatientId] || []}
-          onAddCondition={() => setOpenModal('condition')}
-        />
-        <MedicationGrid
-          medications={medications[selectedPatientId] || []}
-          onAddMedication={() => setOpenModal('medication')}
-        />
-        <CalendarToolbar
-          rangeLabel={formatRange(currentDate, view)}
-          view={view}
-          onViewChange={setView}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          onToday={handleToday}
-          onAddEvent={() => setOpenModal('event')}
-          onUploadNote={() => setOpenModal('note')}
-        />
-        <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
-        <CalendarGrid
-          events={events[selectedPatientId] || []}
-          currentDate={currentDate}
-          todayISO={TODAY_ISO}
-          view={view}
-        />
-        <Legend items={eventLegend} />
-        <PersonalNotes
-          notes={personalNotes[selectedPatientId] || []}
-          onAdd={addPersonalNote}
-          onDelete={deletePersonalNote}
-          onEdit={editPersonalNote}
-        />
+        <div className="layout">
+          <div className="layout-left">
+            <PatientSummary
+              patient={patient}
+              conditions={conditions[selectedPatientId] || []}
+              onAddCondition={() => setOpenModal('condition')}
+            />
+            <MedicationGrid
+              medications={medications[selectedPatientId] || []}
+              onAddMedication={() => setOpenModal('medication')}
+              onEditMedication={startEditMedication}
+              onDeleteMedication={deleteMedication}
+            />
+            <PersonalNotes
+              notes={personalNotes[selectedPatientId] || []}
+              onAdd={addPersonalNote}
+              onDelete={deletePersonalNote}
+              onEdit={editPersonalNote}
+              onToggleDone={togglePersonalNoteDone}
+            />
+          </div>
+          <div className="layout-right">
+            <CalendarToolbar
+              rangeLabel={formatRange(currentDate, view)}
+              view={view}
+              onViewChange={setView}
+              onPrev={handlePrev}
+              onNext={handleNext}
+              onToday={handleToday}
+              onAddEvent={() => setOpenModal('event')}
+              onUploadNote={() => setOpenModal('note')}
+            />
+            <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
+            <CalendarGrid
+              events={events[selectedPatientId] || []}
+              currentDate={currentDate}
+              todayISO={TODAY_ISO}
+              view={view}
+            />
+            <Legend items={eventLegend} />
+          </div>
+        </div>
       </div>
 
-      <Modal open={openModal === 'medication'} title="Add medication" onClose={closeModal}>
-        <AddMedicationForm onSubmit={addMedication} onCancel={closeModal} />
+      <Modal
+        open={openModal === 'medication'}
+        title={editingMedication ? 'Edit medication' : 'Add medication'}
+        onClose={closeModal}
+      >
+        <AddMedicationForm
+          key={editingMedication?.id || 'new'}
+          initial={editingMedication}
+          onSubmit={editingMedication ? editMedication : addMedication}
+          onCancel={closeModal}
+        />
       </Modal>
       <Modal open={openModal === 'condition'} title="Add active condition" onClose={closeModal}>
         <AddConditionForm onSubmit={addCondition} onCancel={closeModal} />
