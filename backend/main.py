@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from services.mongodb import seed_mock_data
-from routes import patients, medications, events, notes, personal_notes, ai
+from routes import patients, medications, events, notes, personal_notes, history, ai
 
 
 @asynccontextmanager
@@ -44,6 +44,7 @@ app.include_router(medications.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(notes.router, prefix="/api")
 app.include_router(personal_notes.router, prefix="/api")
+app.include_router(history.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 
 @app.get("/", tags=["health"])

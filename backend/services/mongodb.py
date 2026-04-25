@@ -45,6 +45,9 @@ def doctor_notes_col():
 def personal_notes_col():
     return get_collection("personal-notes")
 
+def visit_summaries_col():
+    return get_collection("visit-summaries")
+
 
 async def seed_mock_data():
     """
