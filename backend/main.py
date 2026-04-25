@@ -15,8 +15,12 @@ from routes import patients, medications, events, notes, personal_notes, ai
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Seed MongoDB with mock data on first run
-    await seed_mock_data()
+    try:
+        await seed_mock_data()
+        print("✓ MongoDB connected and seeded.")
+    except Exception as e:
+        print(f"⚠ MongoDB unavailable ({e.__class__.__name__}): {e}")
+        print("  Backend will run without database — connect MongoDB to enable persistence.")
     yield
 
 

@@ -52,6 +52,11 @@ AGENT_SEED = os.getenv("AGENT_SEED_PHRASE") or os.getenv("AGENT_SEED", "caregive
 AGENT_PORT = int(os.getenv("AGENT_PORT", "8001"))
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT", f"http://localhost:{AGENT_PORT}/submit")
 AGENTVERSE_KEY = os.getenv("AGENTVERSE_KEY", "")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+
+# How often (seconds) the agent re-syncs patient data from MongoDB in the background
+_SYNC_INTERVAL_SECONDS = 30.0
+_STALE_THRESHOLD_SECONDS = 60.0
 
 # ---------------------------------------------------------------------------
 # Agent setup
@@ -66,63 +71,113 @@ agent = Agent(
     agentverse=_agentverse_config,
 )
 
+
+@agent.on_event("startup")
+async def on_startup(ctx: Context):
+    """Sync patient data from MongoDB (via FastAPI backend) on agent start."""
+    success = _sync_from_backend()
+    if success:
+        names = ", ".join(v["fullName"] for v in MOCK_DATA.values())
+        ctx.logger.info(f"[Startup] Synced live patient data from MongoDB: {names}")
+    else:
+        ctx.logger.warning(
+            f"[Startup] Backend at {BACKEND_URL} unreachable — using hardcoded patient data. "
+            "Start the FastAPI backend to use live MongoDB data."
+        )
+
+
+@agent.on_interval(period=_SYNC_INTERVAL_SECONDS)
+async def background_sync(ctx: Context):
+    """Re-sync patient data from MongoDB every 30 seconds in the background."""
+    import asyncio
+    success = await asyncio.to_thread(_sync_from_backend)
+    if success:
+        ctx.logger.info("[Sync] Patient data refreshed from MongoDB.")
+    else:
+        ctx.logger.debug("[Sync] Backend unreachable — keeping current data.")
+
+
 # ---------------------------------------------------------------------------
-# Official AgentChatProtocol handlers (ASI:One / Agentverse chat)
-# This protocol is locked — only ChatMessage and ChatAcknowledgement allowed.
+# Patient data — exact mirror of mockData.js, filtered for clarity
 # ---------------------------------------------------------------------------
 
-# Backend API base URL — agent fetches live patient data from here
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
-
-# Fallback static data used when the backend is unreachable
-FALLBACK_PATIENTS = {
+MOCK_DATA = {
     "margaret": {
-        "displayName": "Mom (Margaret)", "fullName": "Margaret Williams", "age": 72,
+        "fullName": "Margaret Williams",
+        "displayName": "Mom (Margaret)",
+        "age": 72,
+        "dob": "03/14/1953",
         "primaryDoctor": "Dr. Chen",
         "conditions": ["Type 2 diabetes", "Hypertension", "Early-stage CKD", "Osteoarthritis"],
         "medications": [
-            {"name": "Metformin", "dose": "500mg", "schedule": "2x daily", "withFood": True},
-            {"name": "Lisinopril", "dose": "10mg", "schedule": "1x morning"},
-            {"name": "Atorvastatin", "dose": "20mg", "schedule": "1x evening"},
-            {"name": "Aspirin", "dose": "81mg", "schedule": "1x daily"},
-            {"name": "Vitamin D3", "dose": "2000 IU", "schedule": "1x daily"},
-            {"name": "Tylenol", "dose": "500mg", "schedule": "as needed"},
+            {"name": "Metformin",    "dose": "500mg",   "schedule": "2x daily",  "withFood": True},
+            {"name": "Lisinopril",   "dose": "10mg",    "schedule": "1x morning","withFood": False},
+            {"name": "Atorvastatin", "dose": "20mg",    "schedule": "1x evening","withFood": False},
+            {"name": "Aspirin",      "dose": "81mg",    "schedule": "1x daily",  "withFood": True},
+            {"name": "Vitamin D3",   "dose": "2000 IU", "schedule": "1x daily",  "withFood": True},
+            {"name": "Tylenol",      "dose": "500mg",   "schedule": "as needed", "withFood": False},
         ],
-        "notes": [{"author": "Dr. Chen", "date": "04/22", "body": "Watch for swelling in ankles — may indicate fluid retention. Check blood pressure daily this week and log readings. Schedule follow-up if systolic stays above 140."}],
-        "events": ["Daily BP check (morning)", "PT session Tue 2pm - Ortho/knee", "Nephrology appt Wed 9am with Dr. Chen", "Lab: A1C - Fri 12pm"],
+        # Only meaningful events (appointments, labs, vitals) — not every medication reminder
+        "weekly_events": [
+            "Mon Apr 20 — Daily BP check (morning vitals)",
+            "Mon Apr 20 — Morning walk (activity)",
+            "Tue Apr 21 — PT session 2:00 PM (Ortho · knee)",
+            "Wed Apr 22 — Dr. Chen appointment 9:00 AM (Nephrology)",
+            "Thu Apr 23 — Morning walk (activity)",
+            "Fri Apr 24 — Lab: A1C test 12:00 PM",
+            "Sat Apr 25 — Family visit 2:00 PM",
+        ],
+        "notes": [
+            {
+                "date": "04/22",
+                "author": "Dr. Chen",
+                "body": "Watch for swelling in ankles — may indicate fluid retention. Check blood pressure daily this week and log readings. Schedule follow-up if systolic stays above 140."
+            }
+        ],
     },
     "david": {
-        "displayName": "Dad (David)", "fullName": "David Williams", "age": 74,
+        "fullName": "David Williams",
+        "displayName": "Dad (David)",
+        "age": 74,
+        "dob": "07/02/1951",
         "primaryDoctor": "Dr. Patel",
         "conditions": ["Hypertension", "High cholesterol"],
         "medications": [
-            {"name": "Lisinopril", "dose": "20mg", "schedule": "1x morning"},
-            {"name": "Rosuvastatin", "dose": "10mg", "schedule": "1x evening"},
+            {"name": "Lisinopril",   "dose": "20mg", "schedule": "1x morning", "withFood": False},
+            {"name": "Rosuvastatin", "dose": "10mg", "schedule": "1x evening", "withFood": False},
         ],
-        "notes": [], "events": [],
+        "weekly_events": [],
+        "notes": [],
     },
     "ethan": {
-        "displayName": "Ethan (son)", "fullName": "Ethan Williams", "age": 9,
+        "fullName": "Ethan Williams",
+        "displayName": "Ethan (son)",
+        "age": 9,
+        "dob": "11/22/2016",
         "primaryDoctor": "Dr. Rivera",
         "conditions": ["Asthma", "Seasonal allergies"],
         "medications": [
-            {"name": "Albuterol inhaler", "dose": "90mcg", "schedule": "as needed"},
-            {"name": "Cetirizine", "dose": "5mg", "schedule": "1x daily"},
+            {"name": "Albuterol inhaler", "dose": "90mcg", "schedule": "as needed", "withFood": False},
+            {"name": "Cetirizine",        "dose": "5mg",   "schedule": "1x daily",  "withFood": False},
         ],
-        "notes": [], "events": [],
+        "weekly_events": [],
+        "notes": [],
     },
 }
 
-# Maps name variants a user might say → patient ID in the database
+# Every name/alias a user might say → patient ID
 PATIENT_NAME_MAP = {
-    "margaret": "margaret", "mom": "margaret", "mother": "margaret",
-    "david": "david", "dad": "david", "father": "david",
-    "ethan": "ethan", "son": "ethan", "kid": "ethan",
+    "margaret": "margaret", "margarets": "margaret",
+    "mom": "margaret", "mother": "margaret",
+    "david": "david", "davids": "david",
+    "dad": "david", "father": "david",
+    "ethan": "ethan", "ethans": "ethan",
+    "son": "ethan", "kid": "ethan", "child": "ethan",
 }
 
 
 def _detect_patient(text: str) -> str | None:
-    """Return the patient ID if a patient name is mentioned in the text."""
+    """Return patient ID if any patient name/alias appears in the text."""
     lower = text.lower()
     for keyword, patient_id in PATIENT_NAME_MAP.items():
         if keyword in lower:
@@ -130,85 +185,26 @@ def _detect_patient(text: str) -> str | None:
     return None
 
 
-def _fetch_patient_context(patient_id: str) -> dict:
-    """
-    Fetch live patient data from the FastAPI backend.
-    Falls back to static data if the backend is not running.
-    """
-    import requests as req
-    try:
-        base = BACKEND_URL
-        patient = req.get(f"{base}/patients/{patient_id}", timeout=3).json()
-        meds = req.get(f"{base}/patients/{patient_id}/medications", timeout=3).json()
-        notes = req.get(f"{base}/patients/{patient_id}/notes", timeout=3).json()
-        events = req.get(f"{base}/patients/{patient_id}/events", timeout=3).json()
-        return {
-            "displayName": patient.get("displayName", patient_id),
-            "fullName": patient.get("fullName", patient_id),
-            "age": patient.get("age"),
-            "primaryDoctor": patient.get("primaryDoctor"),
-            "conditions": [c.get("label") for c in patient.get("conditions", [])],
-            "medications": meds,
-            "notes": [{"author": n.get("author"), "date": n.get("date"), "body": n.get("body")} for n in notes],
-            "events": [f"{e.get('time', '')} {e.get('title', '')} {e.get('subtitle', '')}".strip() for e in events],
-        }
-    except Exception:
-        # Backend not running — use fallback static data
-        return FALLBACK_PATIENTS.get(patient_id, {})
+def _format_patient_block(pid: str) -> str:
+    """Format a single patient's full data as a clean text block for ASI-1."""
+    d = MOCK_DATA[pid]
 
+    meds = "\n".join(
+        f"  • {m['name']} {m['dose']} — {m['schedule']}"
+        + (" (take with food)" if m.get("withFood") else "")
+        for m in d["medications"]
+    ) or "  None on file"
 
-def _fetch_all_patients_context() -> str:
-    """Build a context string for all patients (used when no specific patient is mentioned)."""
-    import requests as req
-    try:
-        patients = req.get(f"{BACKEND_URL}/patients", timeout=3).json()
-        patient_ids = [p.get("id") for p in patients]
-    except Exception:
-        patient_ids = list(FALLBACK_PATIENTS.keys())
+    conditions = "\n".join(f"  • {c}" for c in d["conditions"]) or "  None on file"
 
-    sections = []
-    for pid in patient_ids:
-        data = _fetch_patient_context(pid)
-        meds = ", ".join(f"{m.get('name')} {m.get('dose')} ({m.get('schedule')})" for m in data.get("medications", []))
-        conditions = ", ".join(data.get("conditions", []))
-        sections.append(
-            f"PATIENT: {data.get('fullName')} ({data.get('displayName')})\n"
-            f"  Age: {data.get('age')} | Doctor: {data.get('primaryDoctor')}\n"
-            f"  Conditions: {conditions or 'None listed'}\n"
-            f"  Medications: {meds or 'None listed'}"
-        )
-    return "\n\n".join(sections)
+    events = "\n".join(f"  • {e}" for e in d["weekly_events"]) or "  No scheduled events this week"
 
+    notes = "\n".join(
+        f"  • [{n['date']}] {n['author']}: {n['body']}"
+        for n in d["notes"]
+    ) or "  No recent doctor notes on file"
 
-def _build_system_prompt(patient_id: str | None, query: str = "") -> str:
-    """Build a rich, data-driven system prompt for ASI-1 Mini."""
-
-    if patient_id:
-        data = _fetch_patient_context(patient_id)
-        name = data.get("fullName", patient_id)
-        meds = "\n".join(
-            f"  - {m.get('name')} {m.get('dose')} ({m.get('schedule')})"
-            + (" [take with food]" if m.get("withFood") else "")
-            for m in data.get("medications", [])
-        ) or "  None listed"
-        conditions = "\n".join(f"  - {c}" for c in data.get("conditions", [])) or "  None listed"
-        notes = "\n".join(
-            f"  - [{n.get('date')}] {n.get('author')}: {n.get('body')}"
-            for n in data.get("notes", [])
-        ) or "  No recent notes on file."
-        events = "\n".join(f"  - {e}" for e in data.get("events", [])) or "  No upcoming events."
-
-        return f"""You are CaregiverAI, an AI health assistant powered by ASI-1.
-
-STRICT RULES:
-- You are ONLY answering about {name}. Do NOT mention any other patients.
-- Use ONLY the data below. Never invent medications, test results, or diagnoses.
-- For weekly summaries: lead with THIS WEEK'S SCHEDULE and DOCTOR NOTES, then conditions and meds.
-- Be specific and actionable. Use bullet points. Keep it concise.
-- End with one brief reminder to consult the doctor for medical decisions.
-
-━━━ PATIENT: {name} ({data.get('displayName')}) ━━━
-Age: {data.get('age')} | Primary Doctor: {data.get('primaryDoctor')}
+    return f"""PATIENT: {d['fullName']} | Age: {d['age']} | DOB: {d['dob']} | Doctor: {d['primaryDoctor']}
 
 CONDITIONS:
 {conditions}
@@ -216,20 +212,250 @@ CONDITIONS:
 CURRENT MEDICATIONS:
 {meds}
 
-THIS WEEK'S SCHEDULE:
+THIS WEEK'S SCHEDULE (week of Apr 20, 2026):
 {events}
 
 RECENT DOCTOR NOTES:
-{notes}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"""
+{notes}"""
 
+
+ABOUT_ME_MESSAGE = (
+    "Hi! I'm **CaregiverAI**, an AI health management assistant built to help caregivers "
+    "stay on top of their loved ones' health.\n\n"
+    "Here's what you can ask me:\n\n"
+    "• **Medication schedules** — \"What medications does [patient] take and when?\"\n"
+    "• **Weekly health summaries** — \"Summarize [patient]'s health situation this week\"\n"
+    "• **Doctor notes** — \"What did the doctor say about [patient] recently?\"\n"
+    "• **Upcoming appointments & events** — \"What appointments does [patient] have this week?\"\n"
+    "• **Condition overviews** — \"What conditions is [patient] being treated for?\"\n"
+    "• **Medication safety** — \"Are there any concerns with [patient]'s current medications?\"\n\n"
+    "Just mention the patient's name and what you'd like to know!"
+)
+
+# Keywords that signal a health/care-related query
+_CARE_KEYWORDS = {
+    "medic", "medication", "med", "pill", "dose", "drug", "prescription", "rx",
+    "appointment", "appt", "schedule", "event", "visit", "lab", "test",
+    "doctor", "dr.", "dr ", "physician", "nurse",
+    "note", "notes", "summary", "summari", "brief", "update",
+    "condition", "diagnosis", "diagnos", "health", "symptom", "treatment",
+    "week", "today", "daily", "morning", "evening",
+    "patient", "mom", "dad", "mother", "father", "son", "kid", "child",
+    "margaret", "david", "ethan",
+    "blood pressure", "bp", "diabetes", "hypertension", "asthma", "cholesterol", "ckd",
+    "metformin", "lisinopril", "atorvastatin", "aspirin", "albuterol", "cetirizine",
+}
+
+
+def _is_care_query(text: str) -> bool:
+    """Return True if the query is related to caregiving / health topics."""
+    lower = text.lower()
+    return any(kw in lower for kw in _CARE_KEYWORDS)
+
+
+def _classify_query(text: str) -> str:
+    """
+    Classify the user's intent so we can tailor the ASI-1 prompt format.
+    Returns one of: 'summary', 'medication', 'schedule', 'notes', 'general'
+    """
+    lower = text.lower()
+    if any(w in lower for w in ("summari", "brief", "overview", "situation", "week", "update", "how is", "how's")):
+        return "summary"
+    if any(w in lower for w in ("interact", "concern", "safe", "dangerous", "conflict", "drug", "side effect", "reaction")):
+        return "medication_safety"
+    if any(w in lower for w in ("medic", "pill", "dose", "taking", "prescribed", "prescription", "rx")):
+        return "medication"
+    if any(w in lower for w in ("appointment", "schedule", "calendar", "upcoming", "visit", "when", "lab", "test")):
+        return "schedule"
+    if any(w in lower for w in ("note", "doctor said", "dr. said", "what did", "told", "recommend", "instruction")):
+        return "notes"
+    return "general"
+
+
+def _build_prompt(patient_id: str | None, query: str = "") -> tuple[str, str]:
+    """
+    Return (system_prompt, label) for ASI-1 call.
+    When a specific patient is detected, ONLY that patient's data is included.
+    The prompt format is tailored to the query type for better, more impressive responses.
+    """
+    query_type = _classify_query(query)
+
+    base = (
+        "You are CaregiverAI, an AI health management assistant powered by ASI-1 Mini. "
+        "You help caregivers cut through the chaos of managing a loved one's health across multiple providers.\n"
+        "RULES: Use ONLY the data provided. Never invent medications, dosages, or diagnoses. "
+        "Always surface urgent red flags prominently. End with a one-line reminder to consult the doctor.\n\n"
+    )
+
+    # Format instructions change based on what the caregiver is asking
+    if query_type == "summary":
+        format_instruction = (
+            "FORMAT: Write a concise narrative briefing — like a morning report a nurse would give. "
+            "Lead with THIS WEEK'S KEY EVENTS and any doctor instructions. "
+            "Then briefly cover active conditions and medications. "
+            "If doctor notes contain any urgent flags, put them in a ⚠️ ALERT section at the top.\n\n"
+        )
+    elif query_type == "medication_safety":
+        format_instruction = (
+            "FORMAT: Perform a medication safety review. "
+            "List each medication, then identify any known interaction risks, timing conflicts, or concerns. "
+            "Use ✅ for safe, ⚠️ for caution, 🚨 for significant concern. "
+            "Be specific — name the drugs involved in any interaction.\n\n"
+        )
+    elif query_type == "medication":
+        format_instruction = (
+            "FORMAT: List medications clearly — name, dose, schedule, and any food requirements. "
+            "Group by time of day (morning / evening / as needed). Keep it scannable.\n\n"
+        )
+    elif query_type == "schedule":
+        format_instruction = (
+            "FORMAT: Present the schedule chronologically by day and time. "
+            "Bold appointment types. Flag any labs or specialist visits that require prep.\n\n"
+        )
+    elif query_type == "notes":
+        format_instruction = (
+            "FORMAT: Quote the doctor's instructions directly, then explain what the caregiver needs to DO. "
+            "Use action items with checkboxes (- [ ]) so the caregiver can act immediately.\n\n"
+        )
     else:
-        return f"""You are CaregiverAI, an AI health assistant powered by ASI-1.
-Answer the caregiver's question using the patient data below.
-Use ONLY this data. Be specific, concise, and use bullet points.
+        format_instruction = (
+            "FORMAT: Answer concisely with bullet points. Lead with the most actionable information.\n\n"
+        )
 
-ALL PATIENTS:
-{_fetch_all_patients_context()}"""
+    if patient_id and patient_id in MOCK_DATA:
+        d = MOCK_DATA[patient_id]
+        system = (
+            base
+            + format_instruction
+            + f"SCOPE: You are ONLY discussing {d['fullName']} ({d['displayName']}). "
+            + "Do NOT mention any other patients.\n\n"
+            + _format_patient_block(patient_id)
+        )
+        label = d["fullName"]
+    else:
+        all_blocks = "\n\n---\n\n".join(_format_patient_block(pid) for pid in MOCK_DATA)
+        system = base + format_instruction + "ALL FAMILY PATIENTS:\n\n" + all_blocks
+        label = "all patients"
+
+    return system, label
+
+
+# ---------------------------------------------------------------------------
+# MongoDB sync — fetches live data from the FastAPI backend.
+# Updates MOCK_DATA in-memory; falls back to hardcoded data if backend is down.
+# Runs at startup, every 30 s in the background, and before stale queries.
+# ---------------------------------------------------------------------------
+
+# Event types worth surfacing in a weekly brief (skip daily pill reminders)
+_MEANINGFUL_EVENT_TYPES = {"appointment", "lab", "vitals", "activity"}
+
+# Tracks the last successful sync so we can detect stale data
+_last_sync_time: float = 0.0
+
+
+def _sync_from_backend() -> bool:
+    """
+    Pull all patient data from the FastAPI backend (which reads MongoDB) and
+    update MOCK_DATA in-place. Returns True on success, False if backend is down.
+
+    NOTE: Backend routes are prefixed with /api (e.g. /api/patients/).
+    """
+    import requests as req
+    from datetime import date, timedelta
+    import time
+
+    global _last_sync_time
+
+    try:
+        patients_resp = req.get(f"{BACKEND_URL}/api/patients/", timeout=4)
+        patients_resp.raise_for_status()
+        patients_list = patients_resp.json()
+    except Exception:
+        return False  # backend not running — keep current MOCK_DATA
+
+    # Current week start (Monday) for event filtering
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    week_param = week_start.isoformat()
+
+    for p in patients_list:
+        pid = p.get("id")
+        if not pid:
+            continue
+
+        try:
+            meds_resp   = req.get(f"{BACKEND_URL}/api/patients/{pid}/medications", timeout=4)
+            notes_resp  = req.get(f"{BACKEND_URL}/api/patients/{pid}/notes",       timeout=4)
+            events_resp = req.get(
+                f"{BACKEND_URL}/api/patients/{pid}/events",
+                params={"week": week_param},
+                timeout=4,
+            )
+            meds   = meds_resp.json()   if meds_resp.ok   else []
+            notes  = notes_resp.json()  if notes_resp.ok  else []
+            events = events_resp.json() if events_resp.ok else []
+        except Exception:
+            continue  # skip this patient if a sub-request fails
+
+        # Format medications
+        formatted_meds = [
+            {
+                "name":     m.get("name", ""),
+                "dose":     m.get("dose", ""),
+                "schedule": m.get("schedule", ""),
+                "withFood": m.get("withFood", False),
+            }
+            for m in meds
+        ]
+
+        # Format notes
+        formatted_notes = [
+            {
+                "date":   n.get("date", ""),
+                "author": n.get("author", ""),
+                "body":   n.get("body", ""),
+            }
+            for n in notes
+        ]
+
+        # Filter events — only meaningful types, not daily medication reminders
+        formatted_events = []
+        for e in events:
+            if e.get("type") in _MEANINGFUL_EVENT_TYPES:
+                parts = [e.get("date", ""), e.get("time", ""), e.get("title", "")]
+                if e.get("subtitle"):
+                    parts.append(f"({e['subtitle']})")
+                formatted_events.append(" ".join(part for part in parts if part).strip())
+
+        # Update the in-memory store, preserving fallback values if backend returns empty
+        if pid not in MOCK_DATA:
+            MOCK_DATA[pid] = {}
+
+        existing = MOCK_DATA.get(pid, {})
+        MOCK_DATA[pid].update({
+            "fullName":      p.get("fullName",      existing.get("fullName",      pid)),
+            "displayName":   p.get("displayName",   existing.get("displayName",   pid)),
+            "age":           p.get("age",           existing.get("age")),
+            "dob":           p.get("dob",           existing.get("dob",           "")),
+            "primaryDoctor": p.get("primaryDoctor", existing.get("primaryDoctor", "")),
+            "conditions":    [c.get("label") for c in p.get("conditions", [])],
+            "medications":   formatted_meds   if formatted_meds   else existing.get("medications",   []),
+            "notes":         formatted_notes  if formatted_notes  else existing.get("notes",         []),
+            "weekly_events": formatted_events if formatted_events else existing.get("weekly_events", []),
+        })
+
+        # Keep PATIENT_NAME_MAP updated for any new patients added through the UI
+        first_name = MOCK_DATA[pid]["fullName"].split()[0].lower()
+        PATIENT_NAME_MAP[first_name] = pid
+
+    _last_sync_time = time.time()
+    return True
+
+
+def _is_data_stale() -> bool:
+    """Return True if patient data hasn't been synced within the stale threshold."""
+    import time
+    return (time.time() - _last_sync_time) > _STALE_THRESHOLD_SECONDS
 
 
 @chat_protocol.on_message(model=ChatMessage)
@@ -270,31 +496,58 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     # Log the raw content for debugging if extraction fails
     if not user_text:
         ctx.logger.warning(f"[ACP] Could not extract text. Raw content: {msg.content}")
-        user_text = "Give me a brief health summary for all patients this week."
+        await ctx.send(sender, ChatMessage(
+            content=[{"type": "text", "text": ABOUT_ME_MESSAGE}],
+            msg_id=str(uuid.uuid4()),
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        ))
+        return
     else:
         ctx.logger.info(f"[ACP] Message from {sender}: {user_text[:120]}")
 
-    # Detect which patient is being asked about and fetch their live data
+    # If the query isn't health/care-related at all, explain what this agent does
+    if not _is_care_query(user_text):
+        ctx.logger.info(f"[ACP] Off-topic query — returning about-me message")
+        await ctx.send(sender, ChatMessage(
+            content=[{"type": "text", "text": ABOUT_ME_MESSAGE}],
+            msg_id=str(uuid.uuid4()),
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        ))
+        return
+
+    # Refresh data from MongoDB if it's stale before building the response
+    if _is_data_stale():
+        import asyncio
+        refreshed = await asyncio.to_thread(_sync_from_backend)
+        ctx.logger.info(f"[ACP] Data was stale — refreshed from MongoDB: {refreshed}")
+
+    # Detect patient and build a scoped, query-aware system prompt
     patient_id = _detect_patient(user_text)
-    system_prompt = _build_system_prompt(patient_id, query=user_text)
-    ctx.logger.info(f"[ACP] Patient detected: {patient_id or 'none — showing all patients'}")
+    system_prompt, patient_label = _build_prompt(patient_id, query=user_text)
+    ctx.logger.info(f"[ACP] Patient: {patient_label} | Query type: {_classify_query(user_text)}")
+
+    # Add explicit scoping instruction directly in the user turn too
+    if patient_id and patient_id in MOCK_DATA:
+        patient_name = MOCK_DATA[patient_id]["fullName"]
+        augmented_user_text = (
+            f"[IMPORTANT: Only discuss {patient_name}. Do not mention any other patients.]\n\n"
+            + user_text
+        )
+    else:
+        augmented_user_text = user_text
 
     try:
         response_text = call_asi1(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_text},
+                {"role": "user", "content": augmented_user_text},
             ],
             max_tokens=700,
-            temperature=0.3,
+            temperature=0.2,
         )
     except Exception as e:
         ctx.logger.error(f"ASI-1 call failed: {e}")
-        response_text = (
-            "I'm CaregiverAI managing health for Margaret (Mom, 72), David (Dad, 74), "
-            "and Ethan (son, 9). Ask me about their medications, this week's schedule, "
-            "doctor notes, or health summaries. For example: 'Summarize Margaret's health this week.'"
-        )
+        response_text = ABOUT_ME_MESSAGE
 
     # Send response as a new outbound ChatMessage
     await ctx.send(sender, ChatMessage(
