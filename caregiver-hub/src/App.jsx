@@ -148,6 +148,7 @@ export default function App() {
           events={events[selectedPatientId] || []}
           currentDate={currentDate}
           todayISO={TODAY_ISO}
+          view={view}
         />
         <Legend items={eventLegend} />
       </div>

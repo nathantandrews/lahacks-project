@@ -20,7 +20,7 @@ export default function CalendarToolbar({
       </div>
       <div className={styles.right}>
         <button className={styles.actionBtn} onClick={onUploadNote}>Upload doctor's note</button>
-        <button className={styles.actionBtn} onClick={onAddEvent}>+ Event</button>
+        <button className={styles.actionBtn} onClick={onAddEvent}>+ Add Event</button>
         <div className={styles.viewSwitch}>
           {['month', 'week', 'day'].map((v) => (
             <button

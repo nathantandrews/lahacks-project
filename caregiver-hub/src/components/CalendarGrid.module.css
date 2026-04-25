@@ -1,11 +1,17 @@
 /* CalendarGrid — Week view: time-column + 7 day-columns, color-coded events.
-   First grid row = corner + 7 day headers; subsequent rows = time label + 7 cells. */
+   First grid row = corner + 7 day headers; subsequent rows = time label + 7 cells.
+   Day view reuses the same grid with a single day-column (`.dayGrid` override).
+   Month view uses a separate 7-column `.monthGrid` with condensed event chips. */
 
 .grid {
   display: grid;
   grid-template-columns: 64px repeat(7, minmax(0, 1fr));
   background: var(--bg-card);
   border-top: 1px solid var(--border-subtle);
+}
+
+.dayGrid {
+  grid-template-columns: 64px minmax(0, 1fr);
 }
 
 .cornerCell {
@@ -114,4 +120,79 @@
   background: var(--event-lab-bg);
   border-left-color: var(--event-lab);
   color: var(--event-lab);
+}
+
+/* ----- Month view ----- */
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.monthDayHeader {
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.monthDayHeader:first-child {
+  border-left: none;
+}
+
+.monthCell {
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 92px;
+  padding: 4px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.monthCell.outsideMonth {
+  background: var(--bg-muted);
+  opacity: 0.55;
+}
+
+.monthCell.todayMonthCell {
+  background: var(--bg-muted);
+}
+
+.monthDayNum {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  padding: 0 2px;
+}
+
+.monthEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.monthEvent {
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 2px 4px 2px 6px;
+  border-left: 2px solid;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monthMore {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 0 4px;
 }
