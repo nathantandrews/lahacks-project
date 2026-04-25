@@ -8,6 +8,7 @@ import DoctorNote from './components/DoctorNote';
 import CalendarGrid from './components/CalendarGrid';
 import Legend from './components/Legend';
 import PersonalNotes from './components/PersonalNotes';
+import MedicalHistory from './components/MedicalHistory';
 import Modal from './components/Modal';
 import ChatWidget from './components/ChatWidget';
 import AddMedicationForm from './components/AddMedicationForm';
@@ -58,6 +59,7 @@ function formatRange(date, view) {
 export default function App() {
   const [selectedPatientId, setSelectedPatientId] = useState('margaret');
   const [view, setView] = useState('week');
+  const [page, setPage] = useState('dashboard');
   const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
 
   // App state — initialized from mockData, mutable via the four add forms.
@@ -403,75 +405,93 @@ export default function App() {
   return (
     <div className="app">
       <div className="app-card">
-        <Header user={currentUser} addMenuItems={addMenuItems} />
+        <Header
+          user={currentUser}
+          addMenuItems={addMenuItems}
+          view={page}
+          onViewChange={setPage}
+        />
         <PatientTabs
           patients={patients}
           selectedId={selectedPatientId}
           onSelect={setSelectedPatientId}
           onAdd={() => setOpenModal('patient')}
         />
-        <div
-          className="layout"
-          ref={layoutRef}
-          style={leftWidth != null ? { '--left-col': `${leftWidth}px` } : undefined}
-        >
-          {patient ? (
-            <>
-              <div className="layout-left">
-                <PatientSummary
-                  patient={patient}
-                  conditions={conditions[selectedPatientId] || []}
-                  onAddCondition={() => setOpenModal('condition')}
-                />
-                <MedicationGrid
-                  medications={medications[selectedPatientId] || []}
-                  onAddMedication={() => setOpenModal('medication')}
-                  onEditMedication={startEditMedication}
-                  onDeleteMedication={deleteMedication}
-                />
-                <PersonalNotes
-                  notes={personalNotes[selectedPatientId] || []}
-                  onAdd={addPersonalNote}
-                  onDelete={deletePersonalNote}
-                  onEdit={editPersonalNote}
-                  onToggleDone={togglePersonalNoteDone}
-                />
-              </div>
-              <div
-                className={`splitter${dragging ? ' dragging' : ''}`}
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Resize columns. Double-click to reset."
-                onPointerDown={onSplitterPointerDown}
-                onDoubleClick={onSplitterDoubleClick}
-              />
-              <div className="layout-right">
-                <CalendarToolbar
-                  rangeLabel={formatRange(currentDate, view)}
-                  view={view}
-                  onViewChange={setView}
-                  onPrev={handlePrev}
-                  onNext={handleNext}
-                  onToday={handleToday}
-                  onAddEvent={() => setOpenModal('event')}
-                  onUploadNote={() => setOpenModal('note')}
-                />
-                <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
-                <CalendarGrid
-                  events={events[selectedPatientId] || []}
-                  currentDate={currentDate}
-                  todayISO={TODAY_ISO}
-                  view={view}
-                />
-                <Legend items={eventLegend} />
-              </div>
-            </>
+        {page === 'history' ? (
+          patient ? (
+            <MedicalHistory
+              patient={patient}
+              notes={notes[selectedPatientId] || []}
+            />
           ) : (
-            <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               {patients.length === 0 ? 'No patients yet. Add one above.' : 'Loading patient...'}
             </div>
-          )}
-        </div>
+          )
+        ) : (
+          <div
+            className="layout"
+            ref={layoutRef}
+            style={leftWidth != null ? { '--left-col': `${leftWidth}px` } : undefined}
+          >
+            {patient ? (
+              <>
+                <div className="layout-left">
+                  <PatientSummary
+                    patient={patient}
+                    conditions={conditions[selectedPatientId] || []}
+                    onAddCondition={() => setOpenModal('condition')}
+                  />
+                  <MedicationGrid
+                    medications={medications[selectedPatientId] || []}
+                    onAddMedication={() => setOpenModal('medication')}
+                    onEditMedication={startEditMedication}
+                    onDeleteMedication={deleteMedication}
+                  />
+                  <PersonalNotes
+                    notes={personalNotes[selectedPatientId] || []}
+                    onAdd={addPersonalNote}
+                    onDelete={deletePersonalNote}
+                    onEdit={editPersonalNote}
+                    onToggleDone={togglePersonalNoteDone}
+                  />
+                </div>
+                <div
+                  className={`splitter${dragging ? ' dragging' : ''}`}
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize columns. Double-click to reset."
+                  onPointerDown={onSplitterPointerDown}
+                  onDoubleClick={onSplitterDoubleClick}
+                />
+                <div className="layout-right">
+                  <CalendarToolbar
+                    rangeLabel={formatRange(currentDate, view)}
+                    view={view}
+                    onViewChange={setView}
+                    onPrev={handlePrev}
+                    onNext={handleNext}
+                    onToday={handleToday}
+                    onAddEvent={() => setOpenModal('event')}
+                    onUploadNote={() => setOpenModal('note')}
+                  />
+                  <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
+                  <CalendarGrid
+                    events={events[selectedPatientId] || []}
+                    currentDate={currentDate}
+                    todayISO={TODAY_ISO}
+                    view={view}
+                  />
+                  <Legend items={eventLegend} />
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>
+                {patients.length === 0 ? 'No patients yet. Add one above.' : 'Loading patient...'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Modal open={openModal === 'patient'} title="Add patient" onClose={closeModal}>

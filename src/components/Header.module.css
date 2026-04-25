@@ -58,3 +58,26 @@
   color: var(--text-secondary);
   line-height: 1.2;
 }
+
+.navLink {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.navLinkActive {
+  color: var(--text-primary);
+  font-weight: 600;
+  background: var(--bg-note);
+  border-color: var(--border-strong);
+}
