@@ -9,7 +9,16 @@ export default function DoctorNote({ note }) {
         <div className={styles.title}>
           Doctor's note this week · {note.author}, {note.date}
         </div>
-        <p className={styles.text}>{note.body}</p>
+        {note.imageUrl && (
+          <img src={note.imageUrl} alt={note.fileName || ''} className={styles.attachment} />
+        )}
+        {note.fileName && !note.imageUrl && (
+          <div className={styles.fileRow}>
+            <span aria-hidden>📄</span>
+            <span>{note.fileName}</span>
+          </div>
+        )}
+        {note.body && <p className={styles.text}>{note.body}</p>}
       </div>
     </aside>
   );
