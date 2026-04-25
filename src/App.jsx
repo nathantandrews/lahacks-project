@@ -9,6 +9,7 @@ import CalendarGrid from './components/CalendarGrid';
 import Legend from './components/Legend';
 import PersonalNotes from './components/PersonalNotes';
 import Modal from './components/Modal';
+import ChatWidget from './components/ChatWidget';
 import AddMedicationForm from './components/AddMedicationForm';
 import AddConditionForm from './components/AddConditionForm';
 import UploadNoteForm from './components/UploadNoteForm';
@@ -497,6 +498,11 @@ export default function App() {
       <Modal open={openModal === 'event'} title="Add event" onClose={closeModal}>
         <AddEventForm currentDate={currentDate} onSubmit={addEvent} onCancel={closeModal} />
       </Modal>
+
+      <ChatWidget
+        selectedPatientId={selectedPatientId}
+        patientName={patient?.fullName ?? null}
+      />
     </div>
   );
 }
