@@ -5,10 +5,10 @@ Also exposes /chat for the frontend chat widget, calling ASI-1 Mini directly.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from services.mongodb import patients_col, medications_col, doctor_notes_col, events_col
+from services.mongodb import patients_col, medications_col, doctor_notes_col, events_col, visit_summaries_col
 from services import agent_client
-from services.asi1 import call_asi1, build_system_prompt, _detect_patient, _format_block
-from datetime import date, timedelta
+from services.asi1 import call_asi1, build_system_prompt, _detect_patient, _format_block, generate_weekly_summary
+from datetime import date, timedelta, datetime, timezone
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -173,3 +173,80 @@ async def chat(body: ChatRequest):
         "response": response_text,
         "patient_used": target_patient.get("fullName") if target_patient else "all patients",
     }
+
+
+# ---------------------------------------------------------------------------
+# Weekly notes summary — AI-generated summary of all doctor's notes
+# ---------------------------------------------------------------------------
+
+async def _build_and_cache_summary(patient_id: str) -> dict:
+    """
+    Internal helper: fetch all notes for a patient, generate an AI summary,
+    store it in visit_summaries_col, and return it.
+    """
+    patient = await patients_col().find_one({"id": patient_id}, {"_id": 0})
+    if not patient:
+        return {}
+
+    cursor = doctor_notes_col().find(
+        {"patient_id": patient_id}, {"_id": 0, "patient_id": 0}
+    ).sort("weekOf", -1).limit(10)
+    notes = await cursor.to_list(length=10)
+
+    if not notes:
+        return {}
+
+    structured = await generate_weekly_summary(patient, notes)
+
+    record = {
+        "patient_id": patient_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "note_count": len(notes),
+        "structured": structured,
+        "sources": [
+            {"author": n.get("author", ""), "date": n.get("date", ""), "body": n.get("body", "")[:200]}
+            for n in notes
+        ],
+    }
+
+    # Upsert — replace the existing summary for this patient
+    await visit_summaries_col().replace_one(
+        {"patient_id": patient_id},
+        record,
+        upsert=True,
+    )
+    record.pop("_id", None)
+    return record
+
+
+@router.get("/weekly-summary/{patient_id}")
+async def get_weekly_summary(patient_id: str):
+    """
+    Return the cached AI summary for a patient's doctor notes.
+    If no cache exists yet, generates one on the spot.
+    """
+    cached = await visit_summaries_col().find_one(
+        {"patient_id": patient_id}, {"_id": 0}
+    )
+    if cached:
+        return cached
+
+    # No cache — generate now
+    try:
+        result = await _build_and_cache_summary(patient_id)
+        return result or {"structured": {}, "sources": []}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Summary generation failed: {e}")
+
+
+@router.post("/weekly-summary/{patient_id}")
+async def regenerate_weekly_summary(patient_id: str):
+    """
+    Force-regenerate the AI weekly summary for a patient.
+    Called automatically after a new doctor's note is added.
+    """
+    try:
+        result = await _build_and_cache_summary(patient_id)
+        return result or {"structured": {}, "sources": []}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Summary generation failed: {e}")

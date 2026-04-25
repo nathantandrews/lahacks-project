@@ -109,6 +109,90 @@ def _format_block(patient: dict, meds: list, notes: list, events: list) -> str:
     )
 
 
+async def generate_weekly_summary(patient: dict, notes: list[dict]) -> dict:
+    """
+    Synthesize all of a patient's doctor notes into a structured weekly summary.
+    Returns: { summary, action_items, concerns, vitals }
+    """
+    import re as _re
+    import json as _json
+
+    if not notes:
+        return {}
+
+    name = patient.get("fullName", "the patient")
+    conditions = ", ".join(
+        c.get("label", c) if isinstance(c, dict) else c
+        for c in patient.get("conditions", [])
+    ) or "not specified"
+
+    # Build the notes block — only include notes that have actual body text
+    valid_notes = [n for n in notes if n.get("body", "").strip()]
+    if not valid_notes:
+        return {}
+
+    notes_block = "\n\n".join(
+        f"--- Note {i+1} ({n.get('author', 'Doctor')}, {n.get('date', 'this week')}) ---\n{n.get('body', '').strip()}"
+        for i, n in enumerate(valid_notes)
+    )
+
+    system = """You are a medical summarization assistant for caregivers. Your job is to READ all doctor notes and produce a SYNTHESIZED summary — not a copy or quote of any single note.
+
+STRICT RULES:
+- The "summary" must be YOUR OWN 2-3 sentence synthesis written in plain English for a non-medical caregiver.
+- Do NOT copy or quote any sentence verbatim from the notes.
+- Combine insights from ALL notes into unified, actionable output.
+- "action_items" = specific things the caregiver must DO this week (e.g. "Check blood pressure every morning and record it").
+- "concerns" = symptoms or signs the caregiver should WATCH FOR (e.g. "Ankle swelling or puffiness in feet").
+- "vitals" = specific monitoring tasks (e.g. "Log systolic blood pressure daily; call doctor if above 140").
+- Return ONLY a raw JSON object. No markdown, no code fences, no explanation — just the JSON.
+
+EXAMPLE OUTPUT FORMAT:
+{"summary":"[patient] is being closely monitored for [condition] this week. The doctor has flagged [key concern] as the primary focus, and [secondary issue] requires daily tracking.","action_items":["Task 1","Task 2"],"concerns":["Warning sign 1","Warning sign 2"],"vitals":["Monitoring instruction 1"]}"""
+
+    user = (
+        f"Patient: {name}\n"
+        f"Known conditions: {conditions}\n\n"
+        f"Doctor's notes to synthesize:\n\n{notes_block}\n\n"
+        "Now write the JSON summary. Remember: synthesize across ALL notes — do not copy any sentence verbatim."
+    )
+
+    raw = await call_asi1(
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ],
+        max_tokens=500,
+        temperature=0.3,
+    )
+
+    # Strip any accidental markdown fences and parse
+    clean = _re.sub(r"```(?:json)?|```", "", raw).strip()
+
+    # Sometimes the model wraps with extra text before/after the JSON
+    json_match = _re.search(r'\{.*\}', clean, _re.DOTALL)
+    if json_match:
+        clean = json_match.group(0)
+
+    try:
+        result = _json.loads(clean)
+        # Validate expected keys are present
+        return {
+            "summary":      result.get("summary", ""),
+            "action_items": result.get("action_items", []),
+            "concerns":     result.get("concerns", []),
+            "vitals":       result.get("vitals", []),
+        }
+    except Exception:
+        # Last resort: return a clean fallback rather than raw note text
+        return {
+            "summary": f"Your doctor has left {len(valid_notes)} note(s) this week. Please review them below.",
+            "action_items": [],
+            "concerns": [],
+            "vitals": [],
+        }
+
+
 def build_system_prompt(
     message: str,
     target_patient: dict | None,

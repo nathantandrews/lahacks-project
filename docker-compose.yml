@@ -1,48 +1,45 @@
-version: '3.8'
-
 services:
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - pulse-net
 
+  # ── FastAPI backend (MongoDB + AI routes) ──────────────────────────────────
   backend:
-    build:
-      context: ./backend
+    build: ./backend
     ports:
       - "8000:8000"
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017
-      - MONGO_DB_NAME=caregiver_hub
-      - CAREGIVER_AGENT_URL=http://agent:8080
-    depends_on:
-      - mongodb
-    volumes:
-      - ./backend:/app
-    networks:
-      - pulse-net
+    env_file: ./backend/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+  # ── Fetch.ai CaregiverAgent (uAgents + ASI-1 Mini) ────────────────────────
+  agent:
+    build: ./caregiver-agent
     ports:
-      - "5173:5173"
+      - "8001:8001"
+    env_file: ./caregiver-agent/.env
+    environment:
+      # Override BACKEND_URL so agent reaches backend via Docker network
+      - BACKEND_URL=http://backend:8000
     depends_on:
-      - backend
-    volumes:
-      - .:/app
-      - /app/node_modules
-    networks:
-      - pulse-net
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
-networks:
-  pulse-net:
-    driver: bridge
-
-volumes:
-  mongodb_data:
+  # ── ngrok tunnel (exposes agent port 8001 to Agentverse) ──────────────────
+  ngrok:
+    image: ngrok/ngrok:latest
+    ports:
+      - "4040:4040"   # ngrok web dashboard — visit http://localhost:4040
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    # If you have a static ngrok domain, set NGROK_DOMAIN in root .env
+    # and it will be used automatically. Otherwise a random URL is assigned.
+    command: >
+      http
+      ${NGROK_DOMAIN:+--domain=${NGROK_DOMAIN}}
+      agent:8001
+    depends_on:
+      - agent
+    restart: unless-stopped

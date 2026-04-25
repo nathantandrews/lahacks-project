@@ -69,7 +69,25 @@ export default function App() {
   const [events, setEvents] = useState(initialEvents);
   const [notes, setNotes] = useState(initialNotes);
   const [personalNotes, setPersonalNotes] = useState(initialPersonalNotes);
+  // AI-generated weekly summary per patient: { [patientId]: { data, loading } }
+  const [aiSummaries, setAiSummaries] = useState({});
   const [history, setHistory] = useState({});
+
+  async function fetchAiSummary(patientId) {
+    if (!patientId) return;
+    setAiSummaries(prev => ({ ...prev, [patientId]: { data: prev[patientId]?.data, loading: true } }));
+    try {
+      const res = await fetch(`http://localhost:8000/api/ai/weekly-summary/${patientId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAiSummaries(prev => ({ ...prev, [patientId]: { data, loading: false } }));
+      } else {
+        setAiSummaries(prev => ({ ...prev, [patientId]: { data: null, loading: false } }));
+      }
+    } catch {
+      setAiSummaries(prev => ({ ...prev, [patientId]: { data: null, loading: false } }));
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -117,6 +135,9 @@ export default function App() {
           }
         })
       );
+
+      // Fetch AI weekly summary for the selected patient
+      fetchAiSummary(selectedPatientId);
     }
     fetchData();
   }, [selectedPatientId, page]);
@@ -277,12 +298,16 @@ export default function App() {
 
       if (response.ok) {
         const savedNote = await response.json();
-        
+
         // Update dashboard notes
         setNotes((prev) => ({
           ...prev,
           [selectedPatientId]: [savedNote, ...(prev[selectedPatientId] || [])],
         }));
+
+        // Refresh the AI summary — backend generates it in the background,
+        // so poll after a short delay to give ASI-1 time to finish.
+        setTimeout(() => fetchAiSummary(selectedPatientId), 4000);
 
         // Update history timeline
         setHistory((prev) => ({
@@ -506,7 +531,11 @@ export default function App() {
                     onAddEvent={() => setOpenModal('event')}
                     onUploadNote={() => setOpenModal('note')}
                   />
-                  <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
+                  <DoctorNote
+                    notes={notes[selectedPatientId] || []}
+                    summary={aiSummaries[selectedPatientId]?.data}
+                    loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
+                  />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}
                     currentDate={currentDate}

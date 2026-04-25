@@ -3,11 +3,20 @@ import uuid
 import pytesseract
 from PIL import Image
 from io import BytesIO
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
 from services.mongodb import doctor_notes_col
 from models.note import DoctorNote, DoctorNoteCreate
 
 router = APIRouter(prefix="/patients", tags=["notes"])
+
+
+async def _trigger_summary(patient_id: str):
+    """Background task: regenerate the AI weekly summary after a note is added."""
+    try:
+        from routes.ai import _build_and_cache_summary
+        await _build_and_cache_summary(patient_id)
+    except Exception:
+        pass  # summary generation is best-effort; don't fail the note upload
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
 
@@ -19,17 +28,19 @@ async def get_notes(patient_id: str):
 
 
 @router.post("/{patient_id}/notes", response_model=dict, status_code=201)
-async def add_note(patient_id: str, body: DoctorNoteCreate):
+async def add_note(patient_id: str, body: DoctorNoteCreate, background_tasks: BackgroundTasks):
     doc = {**body.model_dump(), "id": f"n_{uuid.uuid4().hex[:8]}", "patient_id": patient_id, "structured": {}}
     await doctor_notes_col().insert_one(doc)
     doc.pop("_id", None)
     doc.pop("patient_id", None)
+    background_tasks.add_task(_trigger_summary, patient_id)
     return doc
 
 
 @router.post("/{patient_id}/notes/upload", response_model=dict, status_code=201)
 async def upload_note_image(
     patient_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     author: str = Form("Unknown Doctor"),
     week_of: str = Form(""),
@@ -87,4 +98,5 @@ async def upload_note_image(
     await doctor_notes_col().insert_one(doc)
     doc.pop("_id", None)
     doc.pop("patient_id", None)
+    background_tasks.add_task(_trigger_summary, patient_id)
     return doc
