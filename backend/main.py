@@ -47,6 +47,10 @@ app.include_router(personal_notes.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 
+@app.get("/health", tags=["health"])
+async def health():
+    return {"status": "ok"}
+
 @app.get("/", tags=["health"])
 async def root():
     return {
