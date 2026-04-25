@@ -16,8 +16,8 @@ export default function MedicalHistory({ patient, items }) {
         <div className={styles.empty}>No historical records yet.</div>
       ) : (
         <ul className={styles.list}>
-          {(items || []).map((item) => (
-            <li key={item.id} className={styles.item}>
+          {(items || []).map((item, i) => (
+            <li key={item.id || item._id || i} className={styles.item}>
               <div className={styles.itemHead}>
                 <span className={`${styles.icon} ${styles[item._category]}`} aria-hidden>
                   {item._category === 'doctor_note' ? 'i' : item._category === 'visit_summary' ? 'V' : 'M'}

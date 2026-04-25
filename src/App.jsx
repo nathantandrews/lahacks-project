@@ -287,6 +287,23 @@ export default function App() {
   };
   const [isUploadingNote, setIsUploadingNote] = useState(false);
 
+  const deleteNote = async (noteId) => {
+    if (!window.confirm('Delete this doctor\'s note? This cannot be undone.')) return;
+    try {
+      await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/notes/${noteId}`, {
+        method: 'DELETE',
+      });
+      setNotes(prev => ({
+        ...prev,
+        [selectedPatientId]: (prev[selectedPatientId] || []).filter(n => n.id !== noteId),
+      }));
+      // Refresh AI summary after deletion
+      setTimeout(() => fetchAiSummary(selectedPatientId), 3000);
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+    }
+  };
+
   const addNote = async ({ file, author, weekOf }) => {
     setIsUploadingNote(true);
     try {
@@ -539,6 +556,7 @@ export default function App() {
                     notes={notes[selectedPatientId] || []}
                     summary={aiSummaries[selectedPatientId]?.data}
                     loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
+                    onDeleteNote={deleteNote}
                   />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}

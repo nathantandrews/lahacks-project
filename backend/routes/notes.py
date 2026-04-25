@@ -27,6 +27,14 @@ async def get_notes(patient_id: str):
     return await cursor.to_list(length=50)
 
 
+@router.delete("/{patient_id}/notes/{note_id}", status_code=204)
+async def delete_note(patient_id: str, note_id: str, background_tasks: BackgroundTasks):
+    result = await doctor_notes_col().delete_one({"patient_id": patient_id, "id": note_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Note not found")
+    background_tasks.add_task(_trigger_summary, patient_id)
+
+
 @router.post("/{patient_id}/notes", response_model=dict, status_code=201)
 async def add_note(patient_id: str, body: DoctorNoteCreate, background_tasks: BackgroundTasks):
     doc = {**body.model_dump(), "id": f"n_{uuid.uuid4().hex[:8]}", "patient_id": patient_id, "structured": {}}
@@ -58,19 +66,38 @@ async def upload_note_image(
     raw_bytes = await file.read()
     raw_text = ""
 
-    # OCR the image or PDF
     try:
         if file.content_type == "application/pdf":
-            import pdf2image
-            # Convert PDF pages to images (requires poppler-utils)
-            images = pdf2image.convert_from_bytes(raw_bytes)
-            for img in images:
-                page_text = pytesseract.image_to_string(img).strip()
-                if page_text:
-                    raw_text += page_text + "\n\n"
+            # First try direct text extraction (works for normal PDFs, no system deps)
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(BytesIO(raw_bytes))
+                for page in reader.pages:
+                    page_text = page.extract_text() or ""
+                    if page_text.strip():
+                        raw_text += page_text.strip() + "\n\n"
+            except Exception:
+                pass
+
+            # If no text found (scanned PDF), fall back to OCR via pdf2image
+            if not raw_text.strip():
+                try:
+                    import pdf2image
+                    images = pdf2image.convert_from_bytes(raw_bytes)
+                    for img in images:
+                        page_text = pytesseract.image_to_string(img).strip()
+                        if page_text:
+                            raw_text += page_text + "\n\n"
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Could not extract text from PDF. Try uploading a non-scanned PDF or a JPG/PNG image instead. ({e})"
+                    )
         else:
             image = Image.open(BytesIO(raw_bytes))
             raw_text = pytesseract.image_to_string(image).strip()
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"OCR failed: {e}")
 

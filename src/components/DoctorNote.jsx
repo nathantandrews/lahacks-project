@@ -1,22 +1,39 @@
 import { useState } from 'react';
 import styles from './DoctorNote.module.css';
 
-function SourceNotes({ sources }) {
+/** Mirror of the backend filter — skip filenames and very short text */
+function isMeaningful(body) {
+  if (!body || body.trim().length < 30) return false;
+  const b = body.trim().toLowerCase();
+  if (b.endsWith('.pdf') || b.endsWith('.png') || b.endsWith('.jpg') || b.endsWith('.jpeg')) return false;
+  if (!b.includes(' ')) return false; // filenames have no spaces
+  return true;
+}
+
+function SourceNotes({ notes, onDelete }) {
   const [expanded, setExpanded] = useState(false);
-  // Only show sources that have real text content
-  const readable = (sources || []).filter(s => s.body && s.body.trim().length >= 30);
-  if (!readable.length) return null;
+  if (!notes.length) return null;
   return (
     <div className={styles.sources}>
       <button className={styles.sourcesToggle} onClick={() => setExpanded(v => !v)}>
-        {expanded ? '▾' : '▸'} {readable.length} source note{readable.length > 1 ? 's' : ''}
+        {expanded ? '▾' : '▸'} {notes.length} source note{notes.length > 1 ? 's' : ''}
       </button>
       {expanded && (
         <ul className={styles.sourceList}>
-          {readable.map((s, i) => (
-            <li key={i} className={styles.sourceItem}>
-              <span className={styles.sourceMeta}>{s.author}{s.date ? ` · ${s.date}` : ''}</span>
-              <span className={styles.sourceBody}>{s.body}</span>
+          {notes.map((n, i) => (
+            <li key={n.id || i} className={styles.sourceItem}>
+              <div className={styles.sourceHeader}>
+                <span className={styles.sourceMeta}>{n.author}{n.date ? ` · ${n.date}` : ''}</span>
+                {onDelete && (
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => onDelete(n.id)}
+                    title="Delete this note"
+                    aria-label="Delete note"
+                  >×</button>
+                )}
+              </div>
+              <span className={styles.sourceBody}>{n.body}</span>
             </li>
           ))}
         </ul>
@@ -25,21 +42,24 @@ function SourceNotes({ sources }) {
   );
 }
 
-export default function DoctorNote({ notes = [], summary, loadingSummary }) {
-  const hasNotes = notes.length > 0;
-  const hasSummary = summary?.structured && Object.keys(summary.structured).length > 0;
+export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote }) {
+  // Filter to only notes with real clinical text — skip filename-only entries
+  const meaningfulNotes = notes.filter(n => isMeaningful(n.body));
 
-  if (!hasNotes && !loadingSummary) return null;
+  const hasMeaningfulNotes = meaningfulNotes.length > 0;
+  const hasSummary = summary?.structured &&
+    (summary.structured.summary || summary.structured.action_items?.length);
+
+  // Nothing to show at all
+  if (!hasMeaningfulNotes && !loadingSummary) return null;
 
   const structured = summary?.structured || {};
-  const sources = summary?.sources || notes.map(n => ({
-    author: n.author, date: n.date, body: n.body,
-  }));
 
-  // Header label
-  const authors = [...new Set(notes.map(n => n.author).filter(Boolean))];
-  const authorLabel = authors.length > 0 ? authors.join(', ') : 'Doctor';
-  const dateLabel = notes[0]?.date || '';
+  // Header uses first meaningful note for author/date
+  const firstNote = meaningfulNotes[0] || notes[0];
+  const authors = [...new Set(meaningfulNotes.map(n => n.author).filter(Boolean))];
+  const authorLabel = authors.join(', ') || 'Doctor';
+  const dateLabel = firstNote?.date || '';
 
   return (
     <aside className={styles.note}>
@@ -49,10 +69,14 @@ export default function DoctorNote({ notes = [], summary, loadingSummary }) {
         {/* Title */}
         <div className={styles.title}>
           Doctor's notes this week
-          {authorLabel && <span className={styles.titleMeta}> · {authorLabel}{dateLabel ? `, ${dateLabel}` : ''}</span>}
+          {authorLabel && (
+            <span className={styles.titleMeta}>
+              {' · '}{authorLabel}{dateLabel ? `, ${dateLabel}` : ''}
+            </span>
+          )}
         </div>
 
-        {/* AI Summary */}
+        {/* AI Summary or fallback */}
         {loadingSummary ? (
           <div className={styles.generating}>
             <span className={styles.pulse} /> Generating AI summary…
@@ -62,34 +86,37 @@ export default function DoctorNote({ notes = [], summary, loadingSummary }) {
             {structured.summary && (
               <p className={styles.text}>{structured.summary}</p>
             )}
-
-            <div className={styles.analysis}>
-              <div className={styles.analysisTitle}>AI Insights & Action Items</div>
-              <ul className={styles.analysisList}>
-                {structured.action_items?.map((item, i) => (
-                  <li key={`action-${i}`}>
-                    <span className={styles.checkbox}>☐</span> {item}
-                  </li>
-                ))}
-                {structured.concerns?.map((item, i) => (
-                  <li key={`concern-${i}`}>
-                    <span className={styles.tag}>Watch</span> {item}
-                  </li>
-                ))}
-                {structured.vitals?.map((item, i) => (
-                  <li key={`vital-${i}`}>
-                    <span className={styles.tag}>Vitals</span> {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {(structured.action_items?.length > 0 ||
+              structured.concerns?.length > 0 ||
+              structured.vitals?.length > 0) && (
+              <div className={styles.analysis}>
+                <div className={styles.analysisTitle}>AI Insights & Action Items</div>
+                <ul className={styles.analysisList}>
+                  {structured.action_items?.map((item, i) => (
+                    <li key={`action-${i}`}>
+                      <span className={styles.checkbox}>☐</span> {item}
+                    </li>
+                  ))}
+                  {structured.concerns?.map((item, i) => (
+                    <li key={`concern-${i}`}>
+                      <span className={styles.tag}>Watch</span> {item}
+                    </li>
+                  ))}
+                  {structured.vitals?.map((item, i) => (
+                    <li key={`vital-${i}`}>
+                      <span className={styles.tag}>Vitals</span> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
-        ) : (
-          /* Fallback: raw note text when no summary yet */
-          notes[0]?.body && <p className={styles.text}>{notes[0].body}</p>
-        )}
+        ) : hasMeaningfulNotes ? (
+          <p className={styles.text}>{meaningfulNotes[0].body}</p>
+        ) : null}
 
-        <SourceNotes sources={sources} />
+        {/* Source notes with delete buttons */}
+        <SourceNotes notes={meaningfulNotes} onDelete={onDeleteNote} />
       </div>
     </aside>
   );

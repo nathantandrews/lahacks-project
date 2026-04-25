@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ── MongoDB Database ──────────────────────────────────────────────────────
   mongodb:
@@ -50,18 +48,18 @@ services:
     restart: unless-stopped
 
   # ── ngrok tunnel (exposes agent port 8001 to Agentverse) ──────────────────
+  # NOTE: Only ONE person on the team should run ngrok at a time.
+  # Each person needs their own NGROK_AUTHTOKEN + NGROK_DOMAIN in root .env.
+  # Teammates who are NOT running ngrok should start with:
+  #   docker compose up backend agent mongodb  (omit ngrok)
   ngrok:
     image: ngrok/ngrok:latest
+    profiles: ["ngrok"]   # opt-in only — not started by default
     ports:
       - "4040:4040"   # ngrok web dashboard — visit http://localhost:4040
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    # If you have a static ngrok domain, set NGROK_DOMAIN in root .env
-    # and it will be used automatically. Otherwise a random URL is assigned.
-    command: >
-      http
-      ${NGROK_DOMAIN:+--domain=${NGROK_DOMAIN}}
-      agent:8001
+    command: "http --url=${NGROK_DOMAIN} agent:8001"
     depends_on:
       - agent
     restart: unless-stopped
