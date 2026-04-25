@@ -44,3 +44,21 @@
   line-height: 1.5;
   color: #3d5a82;
 }
+
+.attachment {
+  display: block;
+  max-width: 240px;
+  max-height: 160px;
+  margin: 4px 0;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.fileRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  font-size: var(--text-sm);
+  color: #3d5a82;
+}

@@ -7,6 +7,7 @@ import CalendarToolbar from './components/CalendarToolbar';
 import DoctorNote from './components/DoctorNote';
 import CalendarGrid from './components/CalendarGrid';
 import Legend from './components/Legend';
+import PersonalNotes from './components/PersonalNotes';
 import Modal from './components/Modal';
 import AddMedicationForm from './components/AddMedicationForm';
 import AddConditionForm from './components/AddConditionForm';
@@ -19,6 +20,7 @@ import {
   medications as initialMedications,
   events as initialEvents,
   notes as initialNotes,
+  personalNotes as initialPersonalNotes,
   eventLegend,
 } from './data/mockData';
 import './App.css';
@@ -62,6 +64,7 @@ export default function App() {
   const [conditions, setConditions] = useState(initialConditions);
   const [events, setEvents] = useState(initialEvents);
   const [notes, setNotes] = useState(initialNotes);
+  const [personalNotes, setPersonalNotes] = useState(initialPersonalNotes);
 
   // Which modal is open: null | 'medication' | 'condition' | 'note' | 'event'
   const [openModal, setOpenModal] = useState(null);
@@ -105,6 +108,27 @@ export default function App() {
       [selectedPatientId]: [note, ...(prev[selectedPatientId] || [])],
     }));
     closeModal();
+  };
+
+  const addPersonalNote = (note) => {
+    setPersonalNotes((prev) => ({
+      ...prev,
+      [selectedPatientId]: [note, ...(prev[selectedPatientId] || [])],
+    }));
+  };
+  const deletePersonalNote = (id) => {
+    setPersonalNotes((prev) => ({
+      ...prev,
+      [selectedPatientId]: (prev[selectedPatientId] || []).filter((n) => n.id !== id),
+    }));
+  };
+  const editPersonalNote = (id, body) => {
+    setPersonalNotes((prev) => ({
+      ...prev,
+      [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
+        n.id === id ? { ...n, body, updatedAt: new Date().toISOString() } : n,
+      ),
+    }));
   };
 
   const addMenuItems = [
@@ -151,6 +175,12 @@ export default function App() {
           view={view}
         />
         <Legend items={eventLegend} />
+        <PersonalNotes
+          notes={personalNotes[selectedPatientId] || []}
+          onAdd={addPersonalNote}
+          onDelete={deletePersonalNote}
+          onEdit={editPersonalNote}
+        />
       </div>
 
       <Modal open={openModal === 'medication'} title="Add medication" onClose={closeModal}>
