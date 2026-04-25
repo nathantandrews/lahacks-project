@@ -4,7 +4,7 @@ import pytesseract
 from PIL import Image
 from io import BytesIO
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from services.mongodb import notes_col
+from services.mongodb import doctor_notes_col
 from models.note import DoctorNote, DoctorNoteCreate
 
 router = APIRouter(prefix="/patients", tags=["notes"])
@@ -14,14 +14,14 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 @router.get("/{patient_id}/notes", response_model=list[dict])
 async def get_notes(patient_id: str):
-    cursor = notes_col().find({"patient_id": patient_id}, {"_id": 0, "patient_id": 0})
+    cursor = doctor_notes_col().find({"patient_id": patient_id}, {"_id": 0, "patient_id": 0})
     return await cursor.to_list(length=50)
 
 
 @router.post("/{patient_id}/notes", response_model=dict, status_code=201)
 async def add_note(patient_id: str, body: DoctorNoteCreate):
     doc = {**body.model_dump(), "id": f"n_{uuid.uuid4().hex[:8]}", "patient_id": patient_id, "structured": {}}
-    await notes_col().insert_one(doc)
+    await doctor_notes_col().insert_one(doc)
     doc.pop("_id", None)
     doc.pop("patient_id", None)
     return doc
@@ -74,7 +74,7 @@ async def upload_note_image(
         "body": raw_text,
         "structured": structured,
     }
-    await notes_col().insert_one(doc)
+    await doctor_notes_col().insert_one(doc)
     doc.pop("_id", None)
     doc.pop("patient_id", None)
     return doc

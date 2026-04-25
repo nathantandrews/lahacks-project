@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from services.mongodb import patients_col
-from models.patient import Patient, PatientCreate
+from models.patient import Patient, PatientCreate, Condition
 import uuid
 
 router = APIRouter(prefix="/patients", tags=["patients"])
@@ -26,6 +26,17 @@ async def get_patient_conditions(patient_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Patient not found")
     return doc.get("conditions", [])
+
+
+@router.post("/{patient_id}/conditions", response_model=dict, status_code=201)
+async def add_patient_condition(patient_id: str, condition: Condition):
+    result = await patients_col().update_one(
+        {"id": patient_id},
+        {"$push": {"conditions": condition.model_dump()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return condition.model_dump()
 
 
 @router.post("/", response_model=dict, status_code=201)

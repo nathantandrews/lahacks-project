@@ -3,7 +3,7 @@ AI routes — proxy to the CaregiverAgent for health briefs, medication checks, 
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.mongodb import patients_col, medications_col, notes_col, events_col
+from services.mongodb import patients_col, medications_col, doctor_notes_col, events_col
 from services import agent_client
 from datetime import date
 
@@ -40,7 +40,7 @@ async def health_brief(patient_id: str):
     events_cursor = events_col().find({"patient_id": patient_id, "date": today}, {"_id": 0, "patient_id": 0})
     todays_events = await events_cursor.to_list(length=50)
 
-    notes_cursor = notes_col().find({"patient_id": patient_id}, {"_id": 0, "patient_id": 0}).sort("weekOf", -1).limit(3)
+    notes_cursor = doctor_notes_col().find({"patient_id": patient_id}, {"_id": 0, "patient_id": 0}).sort("weekOf", -1).limit(3)
     recent_notes = await notes_cursor.to_list(length=3)
 
     patient_context = {

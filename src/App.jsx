@@ -13,9 +13,9 @@ import AddMedicationForm from './components/AddMedicationForm';
 import AddConditionForm from './components/AddConditionForm';
 import UploadNoteForm from './components/UploadNoteForm';
 import AddEventForm from './components/AddEventForm';
+import AddPatientForm from './components/AddPatientForm';
 import {
   currentUser,
-  patients,
   conditions as initialConditions,
   medications as initialMedications,
   events as initialEvents,
@@ -60,6 +60,7 @@ export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
 
   // App state — initialized from mockData, mutable via the four add forms.
+  const [patients, setPatients] = useState([]);
   const [medications, setMedications] = useState(initialMedications);
   const [conditions, setConditions] = useState(initialConditions);
   const [events, setEvents] = useState(initialEvents);
@@ -68,27 +69,46 @@ export default function App() {
 
   useEffect(() => {
     async function fetchData() {
+      const base = 'http://localhost:8000/api';
+
+      // Fetch patients list
       try {
-        // Fetch all data for the selected patient
-        // Assuming your FastAPI endpoints are: /api/patients/{id}/medications, etc.
-        const [medRes, condRes, eventRes] = await Promise.all([
-          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/medications`),
-          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/conditions`),
-          fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events`)
-        ]);
-
-        if (medRes.ok && condRes.ok && eventRes.ok) {
-          const meds = await medRes.json();
-          const conds = await condRes.json();
-          const evs = await eventRes.json();
-
-          setMedications(prev => ({ ...prev, [selectedPatientId]: meds }));
-          setConditions(prev => ({ ...prev, [selectedPatientId]: conds }));
-          setEvents(prev => ({ ...prev, [selectedPatientId]: evs }));
+        const res = await fetch(`${base}/patients`);
+        if (res.ok) {
+          const data = await res.json();
+          setPatients(data);
+          if (data.length > 0 && !selectedPatientId) {
+            setSelectedPatientId(data[0].id);
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch data", err);
+        console.error('Failed to fetch patients', err);
       }
+
+      if (!selectedPatientId) return;
+
+      // Fetch patient-specific data independently
+      const fetches = [
+        { url: `${base}/patients/${selectedPatientId}/medications`, setter: setMedications },
+        { url: `${base}/patients/${selectedPatientId}/conditions`, setter: setConditions },
+        { url: `${base}/patients/${selectedPatientId}/events`, setter: setEvents },
+        { url: `${base}/patients/${selectedPatientId}/notes`, setter: setNotes },
+        { url: `${base}/patients/${selectedPatientId}/personal-notes`, setter: setPersonalNotes },
+      ];
+
+      await Promise.all(
+        fetches.map(async ({ url, setter }) => {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              const data = await res.json();
+              setter(prev => ({ ...prev, [selectedPatientId]: data }));
+            }
+          } catch (err) {
+            console.error(`Failed to fetch ${url}`, err);
+          }
+        })
+      );
     }
     fetchData();
   }, [selectedPatientId]);
@@ -104,7 +124,7 @@ export default function App() {
 
   const patient = useMemo(
     () => patients.find((p) => p.id === selectedPatientId),
-    [selectedPatientId],
+    [selectedPatientId, patients],
   );
 
   const handlePrev = () => {
@@ -131,6 +151,25 @@ export default function App() {
     }));
     closeModal();
   };
+
+  const addPatient = async (newPatient) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPatient),
+      });
+      if (response.ok) {
+        const savedPatient = await response.json();
+        setPatients((prev) => [...prev, savedPatient]);
+        setSelectedPatientId(savedPatient.id);
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving patient:", error);
+    }
+  };
+
   const addMedication = async (newMed) => {
     try {
       const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/medications`, {
@@ -138,7 +177,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newMed),
       });
-      
+
       if (response.ok) {
         const savedMed = await response.json();
         // Update local state to reflect the new data from DB
@@ -152,7 +191,25 @@ export default function App() {
       console.error("Error saving medication:", error);
     }
   };
-  const addCondition = addToPatient(setConditions);
+  const addCondition = async (newCondition) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/conditions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCondition),
+      });
+      if (response.ok) {
+        const savedCondition = await response.json();
+        setConditions((prev) => ({
+          ...prev,
+          [selectedPatientId]: [...(prev[selectedPatientId] || []), savedCondition]
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving condition:", error);
+    }
+  };
   const addEvent = addToPatient(setEvents);
 
   const editMedication = (med) => {
@@ -177,49 +234,107 @@ export default function App() {
     setEditingMedication(med);
     setOpenModal('medication');
   };
-  const addNote = (note) => {
-    setNotes((prev) => ({
-      ...prev,
-      [selectedPatientId]: [note, ...(prev[selectedPatientId] || [])],
-    }));
-    closeModal();
+  const addNote = async (note) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(note),
+      });
+
+      if (response.ok) {
+        const savedNote = await response.json();
+        setNotes((prev) => ({
+          ...prev,
+          [selectedPatientId]: [savedNote, ...(prev[selectedPatientId] || [])],
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving note:", error);
+    }
   };
 
-  const addPersonalNote = (note) => {
-    setPersonalNotes((prev) => ({
-      ...prev,
-      [selectedPatientId]: [note, ...(prev[selectedPatientId] || [])],
-    }));
+  const addPersonalNote = async (note) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/personal-notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(note),
+      });
+      if (response.ok) {
+        const saved = await response.json();
+        setPersonalNotes((prev) => ({
+          ...prev,
+          [selectedPatientId]: [saved, ...(prev[selectedPatientId] || [])],
+        }));
+      }
+    } catch (error) {
+      console.error('Error saving personal note:', error);
+    }
   };
-  const deletePersonalNote = (id) => {
-    setPersonalNotes((prev) => ({
-      ...prev,
-      [selectedPatientId]: (prev[selectedPatientId] || []).filter((n) => n.id !== id),
-    }));
+  const deletePersonalNote = async (id) => {
+    try {
+      await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/personal-notes/${id}`, {
+        method: 'DELETE',
+      });
+      setPersonalNotes((prev) => ({
+        ...prev,
+        [selectedPatientId]: (prev[selectedPatientId] || []).filter((n) => n.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting personal note:', error);
+    }
   };
-  const editPersonalNote = (id, patch) => {
+  const editPersonalNote = async (id, patch) => {
     const fields = typeof patch === 'string' ? { body: patch } : patch;
-    setPersonalNotes((prev) => ({
-      ...prev,
-      [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
-        n.id === id ? { ...n, ...fields, updatedAt: new Date().toISOString() } : n,
-      ),
-    }));
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/personal-notes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setPersonalNotes((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
+            n.id === id ? updated : n,
+          ),
+        }));
+      }
+    } catch (error) {
+      console.error('Error editing personal note:', error);
+    }
   };
-  const togglePersonalNoteDone = (id) => {
-    setPersonalNotes((prev) => ({
-      ...prev,
-      [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
-        n.id === id ? { ...n, done: !n.done } : n,
-      ),
-    }));
+  const togglePersonalNoteDone = async (id) => {
+    const note = (personalNotes[selectedPatientId] || []).find((n) => n.id === id);
+    if (!note) return;
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/personal-notes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done: !note.done }),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setPersonalNotes((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).map((n) =>
+            n.id === id ? updated : n,
+          ),
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling personal note:', error);
+    }
   };
 
   const addMenuItems = [
-    { label: 'Add condition',     onSelect: () => setOpenModal('condition') },
-    { label: 'Add medication',    onSelect: () => setOpenModal('medication') },
+    { label: 'Add condition', onSelect: () => setOpenModal('condition') },
+    { label: 'Add medication', onSelect: () => setOpenModal('medication') },
     { label: "Upload doctor's note", onSelect: () => setOpenModal('note') },
-    { label: 'Add event',         onSelect: () => setOpenModal('event') },
+    { label: 'Add event', onSelect: () => setOpenModal('event') },
   ];
 
   return (
@@ -230,52 +345,63 @@ export default function App() {
           patients={patients}
           selectedId={selectedPatientId}
           onSelect={setSelectedPatientId}
-          onAdd={() => alert('Add patient — not implemented')}
+          onAdd={() => setOpenModal('patient')}
         />
         <div className="layout">
-          <div className="layout-left">
-            <PatientSummary
-              patient={patient}
-              conditions={conditions[selectedPatientId] || []}
-              onAddCondition={() => setOpenModal('condition')}
-            />
-            <MedicationGrid
-              medications={medications[selectedPatientId] || []}
-              onAddMedication={() => setOpenModal('medication')}
-              onEditMedication={startEditMedication}
-              onDeleteMedication={deleteMedication}
-            />
-            <PersonalNotes
-              notes={personalNotes[selectedPatientId] || []}
-              onAdd={addPersonalNote}
-              onDelete={deletePersonalNote}
-              onEdit={editPersonalNote}
-              onToggleDone={togglePersonalNoteDone}
-            />
-          </div>
-          <div className="layout-right">
-            <CalendarToolbar
-              rangeLabel={formatRange(currentDate, view)}
-              view={view}
-              onViewChange={setView}
-              onPrev={handlePrev}
-              onNext={handleNext}
-              onToday={handleToday}
-              onAddEvent={() => setOpenModal('event')}
-              onUploadNote={() => setOpenModal('note')}
-            />
-            <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
-            <CalendarGrid
-              events={events[selectedPatientId] || []}
-              currentDate={currentDate}
-              todayISO={TODAY_ISO}
-              view={view}
-            />
-            <Legend items={eventLegend} />
-          </div>
+          {patient ? (
+            <>
+              <div className="layout-left">
+                <PatientSummary
+                  patient={patient}
+                  conditions={conditions[selectedPatientId] || []}
+                  onAddCondition={() => setOpenModal('condition')}
+                />
+                <MedicationGrid
+                  medications={medications[selectedPatientId] || []}
+                  onAddMedication={() => setOpenModal('medication')}
+                  onEditMedication={startEditMedication}
+                  onDeleteMedication={deleteMedication}
+                />
+                <PersonalNotes
+                  notes={personalNotes[selectedPatientId] || []}
+                  onAdd={addPersonalNote}
+                  onDelete={deletePersonalNote}
+                  onEdit={editPersonalNote}
+                  onToggleDone={togglePersonalNoteDone}
+                />
+              </div>
+              <div className="layout-right">
+                <CalendarToolbar
+                  rangeLabel={formatRange(currentDate, view)}
+                  view={view}
+                  onViewChange={setView}
+                  onPrev={handlePrev}
+                  onNext={handleNext}
+                  onToday={handleToday}
+                  onAddEvent={() => setOpenModal('event')}
+                  onUploadNote={() => setOpenModal('note')}
+                />
+                <DoctorNote note={(notes[selectedPatientId] || [])[0]} />
+                <CalendarGrid
+                  events={events[selectedPatientId] || []}
+                  currentDate={currentDate}
+                  todayISO={TODAY_ISO}
+                  view={view}
+                />
+                <Legend items={eventLegend} />
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '40px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)' }}>
+              {patients.length === 0 ? 'No patients yet. Add one above.' : 'Loading patient...'}
+            </div>
+          )}
         </div>
       </div>
 
+      <Modal open={openModal === 'patient'} title="Add patient" onClose={closeModal}>
+        <AddPatientForm onSubmit={addPatient} onCancel={closeModal} />
+      </Modal>
       <Modal
         open={openModal === 'medication'}
         title={editingMedication ? 'Edit medication' : 'Add medication'}

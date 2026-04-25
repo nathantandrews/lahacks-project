@@ -39,8 +39,11 @@ def medications_col():
 def events_col():
     return get_collection("events")
 
-def notes_col():
-    return get_collection("notes")
+def doctor_notes_col():
+    return get_collection("doctor-notes")
+
+def personal_notes_col():
+    return get_collection("personal-notes")
 
 
 async def seed_mock_data():
@@ -112,8 +115,8 @@ async def seed_mock_data():
             {"patient_id": "ethan", "id": "m10", "name": "Cetirizine", "dose": "5mg", "schedule": "1x daily", "withFood": False},
         ])
 
-    if await db.notes.count_documents({}) == 0:
-        await db.notes.insert_one({
+    if await db["doctor-notes"].count_documents({}) == 0:
+        await db["doctor-notes"].insert_one({
             "patient_id": "margaret",
             "id": "n1",
             "weekOf": "2026-04-20",
