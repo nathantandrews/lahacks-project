@@ -48,20 +48,20 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text-muted);
-  padding: var(--space-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   text-align: right;
   border-bottom: 1px solid var(--border-subtle);
+  height: 60px; /* Fixed height for consistent time scaling */
+  box-sizing: border-box;
 }
 
-.cell {
-  padding: 2px;
-  border-left: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  min-height: 60px;
+.dayColumn {
   position: relative;
+  border-left: 1px solid var(--border-subtle);
+  height: 100%;
 }
 
-.cell.todayCol {
+.dayColumn.todayCol {
   background: var(--bg-muted);
 }
 
@@ -71,14 +71,11 @@
    takes up exactly one quarter of the cell so 4 fifteen-minute events fit. */
 .event {
   position: absolute;
-  left: 2px;
-  right: 2px;
-  height: calc(25% - 1px);
-  border-left: 2px solid;
-  border-radius: 3px;
-  padding: 1px 4px;
+  border-left: 3px solid;
+  border-radius: 4px;
+  padding: 2px 6px;
   font-size: 10px;
-  line-height: 1.1;
+  line-height: 1.2;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -86,8 +83,11 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0;
+  justify-content: flex-start;
+  gap: 1px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  margin-top: 1px;
 }
 
 .event:hover {

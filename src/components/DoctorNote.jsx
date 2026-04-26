@@ -33,20 +33,23 @@ function AddToCalendar({ title, onAdd, onClose }) {
 
   const submit = () => {
     const type = guessEventType(title);
-    const dates = [];
-    if (repeat === 'once') {
-      dates.push(date);
-    } else {
-      const start = new Date(date);
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        dates.push(d.toISOString().slice(0, 10));
-      }
+    const event = {
+      title,
+      startTime,
+      endTime,
+      date,
+      type,
+      subtitle: `${startTime}–${endTime} · AI summary`,
+    };
+
+    if (repeat === 'daily') {
+      const end = new Date(date);
+      end.setDate(end.getDate() + 6); // 7 days total
+      event.repeat = 'daily';
+      event.repeatEndDate = end.toISOString().slice(0, 10);
     }
-    dates.forEach(d =>
-      onAdd({ title, time: startTime, date: d, type, subtitle: `${startTime}–${endTime} · AI summary` })
-    );
+
+    onAdd(event);
     onClose();
   };
 
