@@ -234,7 +234,7 @@ function WeekView({ eventsByDate, currentDate, todayISO, onEventClick }) {
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
 
   return (
-    <div className={styles.grid}>
+    <div data-tour="calendar" className={styles.grid}>
       <div className={styles.cornerCell} />
       {days.map((d, i) => {
         const iso = isoDate(d);
@@ -301,7 +301,7 @@ function DayView({ eventsByDate, currentDate, todayISO, onEventClick }) {
   const positioned = layoutDayEvents(dayEvents, startHour, hours.length);
 
   return (
-    <div className={`${styles.grid} ${styles.dayGrid}`}>
+    <div data-tour="calendar" className={`${styles.grid} ${styles.dayGrid}`}>
       <div className={styles.cornerCell} />
       <div className={`${styles.dayHeader} ${isToday ? styles.today : ''}`}>
         <div className={styles.dayName}>{dayName}</div>

@@ -113,6 +113,7 @@ export default function ChatWidget({ selectedPatientId, patientName }) {
     <>
       {/* Floating button */}
       <button
+        data-tour="chat"
         className={`${styles.fab} ${open ? styles.fabOpen : ''}`}
         onClick={() => setOpen(v => !v)}
         aria-label={open ? 'Close CaregiverAI chat' : 'Open CaregiverAI chat'}

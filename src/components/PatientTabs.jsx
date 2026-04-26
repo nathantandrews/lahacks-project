@@ -24,7 +24,7 @@ export default function PatientTabs({ patients, selectedId, onSelect, onAdd }) {
   );
 
   return (
-    <nav className={styles.tabs}>
+    <nav data-tour="tabs" className={styles.tabs}>
       <div className={styles.sectionLabel}>ACTIVE</div>
       {active.map(renderTab)}
 

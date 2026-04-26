@@ -16,6 +16,7 @@ import AddConditionForm from './components/AddConditionForm';
 import UploadNoteForm from './components/UploadNoteForm';
 import AddEventForm from './components/AddEventForm';
 import AddPatientForm from './components/AddPatientForm';
+import Tutorial from './components/Tutorial';
 import {
   currentUser,
   patients as mockPatients,
@@ -85,6 +86,7 @@ export default function App() {
   // AI-generated weekly summary per patient: { [patientId]: { data, loading } }
   const [aiSummaries, setAiSummaries] = useState({});
   const [history, setHistory] = useState({});
+  const [showTutorial, setShowTutorial] = useState(false);
 
   async function fetchAiSummary(patientId) {
     if (!patientId) return;
@@ -666,6 +668,7 @@ export default function App() {
           addMenuItems={addMenuItems}
           view={page}
           onViewChange={setPage}
+          onStartTutorial={() => setShowTutorial(true)}
         />
         <PatientTabs
           ref={tabsRef}
@@ -826,6 +829,7 @@ export default function App() {
         selectedPatientId={selectedPatientId}
         patientName={patient?.fullName ?? null}
       />
+      {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
     </div>
   );
 }

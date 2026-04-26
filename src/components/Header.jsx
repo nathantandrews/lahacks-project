@@ -1,7 +1,7 @@
 import AddMenu from './AddMenu';
 import styles from './Header.module.css';
 
-export default function Header({ user, addMenuItems, view, onViewChange, ref }) {
+export default function Header({ user, addMenuItems, view, onViewChange, onStartTutorial, ref }) {
   return (
     <header ref={ref} className={styles.header}>
       <div className={styles.left}>
@@ -22,9 +22,23 @@ export default function Header({ user, addMenuItems, view, onViewChange, ref }) 
         <span className={styles.title}>Pulse</span>
       </div>
       <div className={styles.right}>
+        <button 
+          type="button" 
+          className={styles.tutorialBtn} 
+          onClick={onStartTutorial}
+          title="Start interactive tour"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          Help
+        </button>
         {onViewChange && (
           <button
             type="button"
+            data-tour="history-nav"
             className={`${styles.navLink} ${view === 'history' ? styles.navLinkActive : ''}`}
             onClick={() => onViewChange(view === 'history' ? 'dashboard' : 'history')}
             aria-label={view === 'history' ? 'Back to dashboard' : 'Medical History'}
