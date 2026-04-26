@@ -44,7 +44,7 @@ function StructuredValue({ label, value }) {
   );
 }
 
-function HistoryItem({ item, i, onDeleteNote }) {
+function HistoryItem({ item, i, onDeleteNote, dataTour }) {
   const [insightsOpen, setInsightsOpen] = useState(false);
 
   const structuredEntries = item.structured
@@ -57,7 +57,7 @@ function HistoryItem({ item, i, onDeleteNote }) {
     : [];
 
   return (
-    <li key={item.id || item._id || i} className={styles.item}>
+    <li key={item.id || item._id || i} className={styles.item} data-tour={dataTour}>
       <div className={styles.itemHead}>
         <span className={`${styles.icon} ${styles[item._category]}`} aria-hidden>
           {item._category === 'doctor_note' ? 'i' : item._category === 'visit_summary' ? 'V' : 'M'}
@@ -161,6 +161,7 @@ export default function MedicalHistory({ patient, items, onDeleteNote }) {
               item={item}
               i={i}
               onDeleteNote={onDeleteNote}
+              dataTour={i === 0 ? "history-first" : undefined}
             />
           ))}
         </ul>

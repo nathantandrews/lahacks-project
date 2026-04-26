@@ -78,6 +78,7 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loadin
         <label className={styles.label}>Source</label>
         <div className={styles.uploadOptions}>
           <button
+            data-tour="file-input"
             type="button"
             className={styles.uploadOption}
             onClick={() => fileInputRef.current?.click()}
@@ -119,7 +120,12 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loadin
       )}
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={onCancel} disabled={loading}>Cancel</button>
-        <button type="submit" className={styles.submit} disabled={!file || loading}>
+        <button 
+          data-tour="confirm-upload"
+          type="submit" 
+          className={styles.submit} 
+          disabled={!file || loading}
+        >
           {loading ? 'Analyzing with AI...' : 'Upload note'}
         </button>
       </div>
