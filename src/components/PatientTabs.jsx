@@ -4,9 +4,10 @@ export default function PatientTabs({ patients, selectedId, onSelect, onAdd }) {
   const active = patients.filter(p => p.status !== 'archived');
   const archived = patients.filter(p => p.status === 'archived');
 
-  const renderTab = (p) => (
+  const renderTab = (p, index) => (
     <button
       key={p.id}
+      data-tour={index === 1 ? 'second-patient' : undefined}
       className={`${styles.tab} ${p.id === selectedId ? styles.active : ''} ${p.status === 'archived' ? styles.archived : ''}`}
       onClick={() => onSelect(p.id)}
     >
@@ -26,12 +27,12 @@ export default function PatientTabs({ patients, selectedId, onSelect, onAdd }) {
   return (
     <nav data-tour="tabs" className={styles.tabs}>
       <div className={styles.sectionLabel}>ACTIVE</div>
-      {active.map(renderTab)}
+      {active.map((p, i) => renderTab(p, i))}
 
       {archived.length > 0 && (
         <>
           <div className={`${styles.sectionLabel} ${styles.archivedLabel}`}>ARCHIVED</div>
-          {archived.map(renderTab)}
+          {archived.map((p, i) => renderTab(p, i + active.length))}
         </>
       )}
 

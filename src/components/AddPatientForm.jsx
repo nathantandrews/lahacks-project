@@ -34,8 +34,9 @@ export default function AddPatientForm({ initialData, onSubmit, onCancel, onArch
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
-      <div className={styles.field}>
-        <label className={styles.label}>Full Name</label>
+      <div data-tour="edit-form">
+        <div className={styles.field}>
+          <label className={styles.label}>Full Name</label>
         <input
           className={styles.input}
           value={fullName}
@@ -87,6 +88,7 @@ export default function AddPatientForm({ initialData, onSubmit, onCancel, onArch
           placeholder="e.g. Dr. Chen"
           required
         />
+        </div>
       </div>
 
       {isEditing && (
@@ -105,7 +107,7 @@ export default function AddPatientForm({ initialData, onSubmit, onCancel, onArch
 
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit}>
+        <button data-tour="edit-save" type="submit" className={styles.submit}>
           {isEditing ? 'Save Changes' : 'Add patient'}
         </button>
       </div>
