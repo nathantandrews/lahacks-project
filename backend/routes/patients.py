@@ -87,6 +87,37 @@ async def add_patient_condition(patient_id: str, condition: Condition):
     return condition.model_dump()
 
 
+@router.patch("/{patient_id}/conditions/{condition_id}", response_model=dict)
+async def update_patient_condition(patient_id: str, condition_id: str, body: dict = Body(...)):
+    updates = {f"conditions.$.{k}": v for k, v in body.items() if k != "id"}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = await patients_col().update_one(
+        {"id": patient_id, "conditions.id": condition_id},
+        {"$set": updates},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Condition not found")
+    doc = await patients_col().find_one(
+        {"id": patient_id}, {"_id": 0, "conditions": 1}
+    )
+    conditions = doc.get("conditions", []) if doc else []
+    updated = next((c for c in conditions if c.get("id") == condition_id), None)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Condition not found")
+    return updated
+
+
+@router.delete("/{patient_id}/conditions/{condition_id}", status_code=204)
+async def delete_patient_condition(patient_id: str, condition_id: str):
+    result = await patients_col().update_one(
+        {"id": patient_id},
+        {"$pull": {"conditions": {"id": condition_id}}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+
 @router.post("/", response_model=dict, status_code=201)
 async def create_patient(body: PatientCreate):
     new_id = body.fullName.lower().replace(" ", "_") + "_" + uuid.uuid4().hex[:4]

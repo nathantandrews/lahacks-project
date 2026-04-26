@@ -256,10 +256,13 @@ export default function App() {
   const [editingMedication, setEditingMedication] = useState(null);
   // When set, the event modal opens in edit mode for this event.
   const [editingEvent, setEditingEvent] = useState(null);
+  // When set, the condition modal opens in edit mode for this condition.
+  const [editingCondition, setEditingCondition] = useState(null);
   const closeModal = () => {
     setOpenModal(null);
     setEditingMedication(null);
     setEditingEvent(null);
+    setEditingCondition(null);
   };
 
   const patient = useMemo(
@@ -359,6 +362,51 @@ export default function App() {
     } catch (error) {
       console.error("Error saving condition:", error);
     }
+  };
+
+  const editCondition = async (updated) => {
+    const { id, ...patch } = updated;
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/conditions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (response.ok) {
+        const saved = await response.json();
+        setConditions((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).map((c) =>
+            c.id === id ? saved : c,
+          ),
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error updating condition:", error);
+    }
+  };
+
+  const deleteCondition = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/conditions/${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok || response.status === 204) {
+        setConditions((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).filter((c) => c.id !== id),
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error deleting condition:", error);
+    }
+  };
+
+  const startEditCondition = (condition) => {
+    setEditingCondition(condition);
+    setOpenModal('condition');
   };
   const addEvent = async (newEvent) => {
     try {
@@ -747,6 +795,7 @@ export default function App() {
                     patient={patient}
                     conditions={conditions[selectedPatientId] || []}
                     onAddCondition={() => setOpenModal('condition')}
+                    onEditCondition={startEditCondition}
                     onEdit={() => setOpenModal('patient')}
                   />
                   <MedicationGrid
@@ -852,8 +901,18 @@ export default function App() {
           onCancel={closeModal}
         />
       </Modal>
-      <Modal open={openModal === 'condition'} title="Add active condition" onClose={closeModal}>
-        <AddConditionForm onSubmit={addCondition} onCancel={closeModal} />
+      <Modal
+        open={openModal === 'condition'}
+        title={editingCondition ? 'Edit condition' : 'Add active condition'}
+        onClose={closeModal}
+      >
+        <AddConditionForm
+          key={editingCondition?.id || 'new'}
+          initial={editingCondition}
+          onSubmit={editingCondition ? editCondition : addCondition}
+          onDelete={deleteCondition}
+          onCancel={closeModal}
+        />
       </Modal>
       <Modal open={openModal === 'note'} title="Upload doctor's note" onClose={closeModal}>
         <UploadNoteForm currentDate={currentDate} onSubmit={addNote} onCancel={closeModal} loading={isUploadingNote} />

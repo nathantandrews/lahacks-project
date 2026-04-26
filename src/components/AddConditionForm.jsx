@@ -8,18 +8,25 @@ const TONES = [
   { value: 'ortho', label: 'Mint' },
 ];
 
-export default function AddConditionForm({ onSubmit, onCancel }) {
-  const [label, setLabel] = useState('');
-  const [tone, setTone] = useState('diabetes');
+export default function AddConditionForm({ onSubmit, onCancel, onDelete, initial }) {
+  const isEdit = !!initial;
+  const [label, setLabel] = useState(initial?.label || '');
+  const [tone, setTone] = useState(initial?.tone || 'diabetes');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!label.trim()) return;
     onSubmit({
-      id: `c-${Date.now()}`,
+      id: initial?.id || `c-${Date.now()}`,
       label: label.trim(),
       tone,
     });
+  };
+
+  const handleDelete = () => {
+    if (!initial) return;
+    if (!window.confirm(`Delete "${initial.label}"? This can't be undone.`)) return;
+    onDelete?.(initial.id);
   };
 
   return (
@@ -47,8 +54,15 @@ export default function AddConditionForm({ onSubmit, onCancel }) {
         </select>
       </div>
       <div className={styles.actions}>
+        {isEdit && onDelete && (
+          <button type="button" className={styles.danger} onClick={handleDelete}>
+            Delete
+          </button>
+        )}
         <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit}>Add condition</button>
+        <button type="submit" className={styles.submit}>
+          {isEdit ? 'Save changes' : 'Add condition'}
+        </button>
       </div>
     </form>
   );

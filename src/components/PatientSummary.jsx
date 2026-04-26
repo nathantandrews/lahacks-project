@@ -1,6 +1,6 @@
 import styles from './PatientSummary.module.css';
 
-export default function PatientSummary({ patient, conditions, onAddCondition, onEdit }) {
+export default function PatientSummary({ patient, conditions, onAddCondition, onEditCondition, onEdit }) {
   const isArchived = patient.status === 'archived';
 
   return (
@@ -31,9 +31,15 @@ export default function PatientSummary({ patient, conditions, onAddCondition, on
         </div>
         <div className={styles.chips}>
           {conditions.map((c) => (
-            <span key={c.id} className={`${styles.chip} ${styles[c.tone]}`}>
+            <button
+              key={c.id}
+              type="button"
+              className={`${styles.chip} ${styles[c.tone]}`}
+              onClick={() => onEditCondition?.(c)}
+              title="Edit condition"
+            >
               {c.label}
-            </span>
+            </button>
           ))}
         </div>
       </div>
