@@ -108,16 +108,23 @@
 
 .calBtn {
   background: none;
-  border: none;
+  border: 1px solid #c3d4ee;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
-  padding: 0 2px;
-  opacity: 0.55;
-  transition: opacity 0.15s;
+  font-size: 11px;
+  padding: 2px 8px;
+  color: #4a78c4;
+  opacity: 0.75;
+  transition: all 0.15s;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 1.4;
+  white-space: nowrap;
 }
-.calBtn:hover { opacity: 1; }
+.calBtn:hover {
+  opacity: 1;
+  background: #eef3fc;
+  border-color: #4a78c4;
+}
 
 /* Calendar popover */
 .calendarPopover {
@@ -146,6 +153,29 @@
 .calendarFields {
   display: flex;
   gap: 6px;
+}
+
+.calendarTimeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calendarTimeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.calendarTimeLabel {
+  font-size: 10px;
+  color: #7a9bc8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.calendarTimeSep {
+  color: #7a9bc8;
+  font-size: 14px;
+  margin-top: 12px;
 }
 .calendarInput {
   font-size: 12px;

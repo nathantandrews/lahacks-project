@@ -24,10 +24,11 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Inline "add to calendar" mini-form that appears when the 📅 button is clicked */
+/** Inline "add to calendar" mini-form that appears when the button is clicked */
 function AddToCalendar({ title, onAdd, onClose }) {
   const [date, setDate] = useState(todayIso());
-  const [time, setTime] = useState('08:00');
+  const [startTime, setStartTime] = useState('08:00');
+  const [endTime, setEndTime] = useState('09:00');
   const [repeat, setRepeat] = useState('once');
 
   const submit = () => {
@@ -36,7 +37,6 @@ function AddToCalendar({ title, onAdd, onClose }) {
     if (repeat === 'once') {
       dates.push(date);
     } else {
-      // Generate 7 days of dates starting from selected date
       const start = new Date(date);
       for (let i = 0; i < 7; i++) {
         const d = new Date(start);
@@ -44,7 +44,9 @@ function AddToCalendar({ title, onAdd, onClose }) {
         dates.push(d.toISOString().slice(0, 10));
       }
     }
-    dates.forEach(d => onAdd({ title, time, date: d, type, subtitle: 'From AI summary' }));
+    dates.forEach(d =>
+      onAdd({ title, time: startTime, date: d, type, subtitle: `${startTime}–${endTime} · AI summary` })
+    );
     onClose();
   };
 
@@ -54,7 +56,17 @@ function AddToCalendar({ title, onAdd, onClose }) {
       <div className={styles.calendarTask}>{title}</div>
       <div className={styles.calendarFields}>
         <input type="date" className={styles.calendarInput} value={date} onChange={e => setDate(e.target.value)} />
-        <input type="time" className={styles.calendarInput} value={time} onChange={e => setTime(e.target.value)} />
+      </div>
+      <div className={styles.calendarTimeRow}>
+        <div className={styles.calendarTimeGroup}>
+          <label className={styles.calendarTimeLabel}>Start</label>
+          <input type="time" className={styles.calendarInput} value={startTime} onChange={e => setStartTime(e.target.value)} />
+        </div>
+        <span className={styles.calendarTimeSep}>→</span>
+        <div className={styles.calendarTimeGroup}>
+          <label className={styles.calendarTimeLabel}>End</label>
+          <input type="time" className={styles.calendarInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
+        </div>
       </div>
       <div className={styles.calendarRepeat}>
         <label>
@@ -68,14 +80,21 @@ function AddToCalendar({ title, onAdd, onClose }) {
       </div>
       <div className={styles.calendarActions}>
         <button className={styles.calendarCancel} onClick={onClose}>Cancel</button>
-        <button className={styles.calendarConfirm} onClick={submit}>Add</button>
+        <button className={styles.calendarConfirm} onClick={submit}>Add to calendar</button>
       </div>
     </div>
   );
 }
 
-function ActionItem({ text, icon, tagLabel, onAddToCalendar }) {
+function ActionItem({ text, icon, tagLabel, onAddToCalendar, onAdded }) {
   const [open, setOpen] = useState(false);
+
+  const handleAdd = (event) => {
+    onAddToCalendar(event);
+    onAdded(text);
+    setOpen(false);
+  };
+
   return (
     <li className={styles.actionItem}>
       <div className={styles.actionRow}>
@@ -86,15 +105,16 @@ function ActionItem({ text, icon, tagLabel, onAddToCalendar }) {
           <button
             className={styles.calBtn}
             onClick={() => setOpen(v => !v)}
-            title="Add to calendar"
             aria-label="Add to calendar"
-          >📅</button>
+          >
+            📅 Add to calendar
+          </button>
         )}
       </div>
       {open && (
         <AddToCalendar
           title={text}
-          onAdd={onAddToCalendar}
+          onAdd={handleAdd}
           onClose={() => setOpen(false)}
         />
       )}
@@ -129,7 +149,24 @@ function SourceNotes({ notes, onDelete }) {
   );
 }
 
-export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar }) {
+/**
+ * Returns true if actionText is already represented by an existing calendar event.
+ * Matches on exact title (case-insensitive) since AI-added events use the action
+ * item text verbatim as the title.
+ */
+function isAlreadyScheduled(actionText, events) {
+  if (!events?.length) return false;
+  const needle = actionText.trim().toLowerCase();
+  return events.some(ev => ev.title?.trim().toLowerCase() === needle);
+}
+
+export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar, events = [] }) {
+  // Session-level additions (disappear on refresh, but calendar check covers persistence)
+  const [addedItems, setAddedItems] = useState(new Set());
+  const markAdded = (text) => setAddedItems(prev => new Set([...prev, text]));
+
+  const isHidden = (text) => addedItems.has(text) || isAlreadyScheduled(text, events);
+
   const meaningfulNotes = notes.filter(n => isMeaningful(n.body));
   const hasMeaningfulNotes = meaningfulNotes.length > 0;
   const hasSummary = summary?.structured &&
@@ -172,14 +209,14 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
               <div className={styles.analysis}>
                 <div className={styles.analysisTitle}>AI Insights & Action Items</div>
                 <ul className={styles.analysisList}>
-                  {structured.action_items?.map((item, i) => (
-                    <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} />
+                  {structured.action_items?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
                   ))}
-                  {structured.concerns?.map((item, i) => (
-                    <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} />
+                  {structured.concerns?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} onAdded={markAdded} />
                   ))}
-                  {structured.vitals?.map((item, i) => (
-                    <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} />
+                  {structured.vitals?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
                   ))}
                 </ul>
               </div>

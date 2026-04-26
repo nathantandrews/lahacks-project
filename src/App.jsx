@@ -18,6 +18,7 @@ import AddEventForm from './components/AddEventForm';
 import AddPatientForm from './components/AddPatientForm';
 import {
   currentUser,
+  patients as mockPatients,
   conditions as initialConditions,
   medications as initialMedications,
   events as initialEvents,
@@ -63,7 +64,9 @@ export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
 
   // App state — initialized from mockData, mutable via the four add forms.
-  const [patients, setPatients] = useState([]);
+  // Seed from mockData immediately so the sidebar is never blank on load.
+  // Backend data overwrites this once fetched.
+  const [patients, setPatients] = useState(mockPatients);
   const [medications, setMedications] = useState(initialMedications);
   const [conditions, setConditions] = useState(initialConditions);
   const [events, setEvents] = useState(initialEvents);
@@ -93,19 +96,28 @@ export default function App() {
     async function fetchData() {
       const base = 'http://localhost:8000/api';
 
-      // Fetch patients list
-      try {
-        const res = await fetch(`${base}/patients`);
-        if (res.ok) {
-          const data = await res.json();
-          setPatients(data);
-          if (data.length > 0 && !selectedPatientId) {
-            setSelectedPatientId(data[0].id);
+      // Fetch patients list with retry so a slow backend start doesn't leave
+      // the sidebar blank. mockPatients already seeds the UI, so this is a
+      // background enrichment rather than a blocking load.
+      const fetchPatients = async (attempt = 0) => {
+        try {
+          const res = await fetch(`${base}/patients`);
+          if (res.ok) {
+            const data = await res.json();
+            setPatients(data);
+            if (data.length > 0 && !selectedPatientId) {
+              setSelectedPatientId(data[0].id);
+            }
           }
+        } catch {
+          if (attempt < 3) {
+            // Exponential backoff: 500ms, 1s, 2s
+            setTimeout(() => fetchPatients(attempt + 1), 500 * 2 ** attempt);
+          }
+          // Silently fall back to mockPatients already in state
         }
-      } catch (err) {
-        console.error('Failed to fetch patients', err);
-      }
+      };
+      fetchPatients();
 
       if (!selectedPatientId) return;
 
@@ -578,6 +590,7 @@ export default function App() {
                     loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
                     onDeleteNote={deleteNote}
                     onAddToCalendar={addEventDirect}
+                    events={events[selectedPatientId] || []}
                   />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}
