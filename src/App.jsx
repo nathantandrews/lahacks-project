@@ -702,15 +702,16 @@ export default function App() {
   }
 
   return (
-    <div className={`app-entrance ${isExitingDashboard ? 'app-exit' : ''}`}>
+    <>
+      <div className={`app-entrance ${isExitingDashboard ? 'app-exit' : ''}`}>
       <div className="app">
       <div className="app-card">
         <Header
           ref={headerRef}
           user={currentUser}
           addMenuItems={addMenuItems}
-          view={view}
-          onViewChange={setView}
+          view={page}
+          onViewChange={setPage}
           onStartTutorial={() => setShowTutorial(true)}
           onLogoClick={handleGoHome}
         />
@@ -872,12 +873,17 @@ export default function App() {
         />
       </Modal>
 
-      <ChatWidget
-        selectedPatientId={selectedPatientId}
-        patientName={patient?.fullName ?? null}
-      />
-      {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
     </div>
     </div>
+    {!showLanding && (
+      <>
+        <ChatWidget
+          selectedPatientId={selectedPatientId}
+          patientName={patient?.fullName ?? null}
+        />
+        {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
+      </>
+    )}
+    </>
   );
 }

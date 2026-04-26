@@ -87,9 +87,14 @@ export default function Tutorial({ onComplete }) {
   }, [step.target]);
 
   useEffect(() => {
+    let rafId;
+    const handleUpdate = () => {
+      rafId = requestAnimationFrame(updateCoords);
+    };
+
     updateCoords();
-    window.addEventListener('resize', updateCoords);
-    window.addEventListener('scroll', updateCoords, true);
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
     
     // Auto-advance on required action
     const handleInteraction = (e) => {
@@ -111,11 +116,22 @@ export default function Tutorial({ onComplete }) {
     }
 
     return () => {
-      window.removeEventListener('resize', updateCoords);
-      window.removeEventListener('scroll', updateCoords, true);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
       document.removeEventListener('mousedown', handleInteraction);
     };
   }, [currentStep, step.target, step.requireAction, updateCoords, onComplete]);
+
+  useEffect(() => {
+    // Lock scrolling
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {

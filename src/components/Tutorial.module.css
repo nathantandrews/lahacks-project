@@ -14,7 +14,7 @@
   border-radius: var(--radius-lg);
   box-shadow: 0 0 0 9999px rgba(8, 12, 24, 0.65);
   background: transparent;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease-out;
   pointer-events: none;
   z-index: 10000;
 }
