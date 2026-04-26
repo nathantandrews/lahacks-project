@@ -28,7 +28,17 @@ import {
 } from './data/mockData';
 import './App.css';
 
-const TODAY_ISO = new Date().toISOString().slice(0, 10);
+function localTodayIso() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function localToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+const TODAY_ISO = localTodayIso();
 
 function formatRange(date, view) {
   if (view === 'day') {
@@ -61,7 +71,7 @@ export default function App() {
   const [selectedPatientId, setSelectedPatientId] = useState('margaret');
   const [view, setView] = useState('week');
   const [page, setPage] = useState('dashboard');
-  const [currentDate, setCurrentDate] = useState(new Date(TODAY_ISO));
+  const [currentDate, setCurrentDate] = useState(localToday);
 
   // App state — initialized from mockData, mutable via the four add forms.
   // Seed from mockData immediately so the sidebar is never blank on load.
@@ -237,7 +247,7 @@ export default function App() {
     else d.setMonth(d.getMonth() + 1);
     setCurrentDate(d);
   };
-  const handleToday = () => setCurrentDate(new Date(TODAY_ISO));
+  const handleToday = () => setCurrentDate(localToday());
 
   // Append helpers — each takes the new item and pushes onto the current patient's list.
   const addToPatient = (setter) => (item) => {
