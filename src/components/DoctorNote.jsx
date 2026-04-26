@@ -161,9 +161,9 @@ function isAlreadyScheduled(actionText, events) {
 }
 
 export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar, events = [] }) {
-  // Session-level additions (disappear on refresh, but calendar check covers persistence)
   const [addedItems, setAddedItems] = useState(new Set());
   const markAdded = (text) => setAddedItems(prev => new Set([...prev, text]));
+  const [insightsOpen, setInsightsOpen] = useState(false);
 
   const isHidden = (text) => addedItems.has(text) || isAlreadyScheduled(text, events);
 
@@ -207,18 +207,27 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
               structured.concerns?.length > 0 ||
               structured.vitals?.length > 0) && (
               <div className={styles.analysis}>
-                <div className={styles.analysisTitle}>AI Insights & Action Items</div>
-                <ul className={styles.analysisList}>
-                  {structured.action_items?.filter(item => !isHidden(item)).map((item, i) => (
-                    <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
-                  ))}
-                  {structured.concerns?.filter(item => !isHidden(item)).map((item, i) => (
-                    <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} onAdded={markAdded} />
-                  ))}
-                  {structured.vitals?.filter(item => !isHidden(item)).map((item, i) => (
-                    <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
-                  ))}
-                </ul>
+                <button
+                  className={styles.analysisToggle}
+                  onClick={() => setInsightsOpen(v => !v)}
+                  aria-expanded={insightsOpen}
+                >
+                  <span className={styles.analysisToggleChevron}>{insightsOpen ? '▾' : '▸'}</span>
+                  AI Insights & Action Items
+                </button>
+                {insightsOpen && (
+                  <ul className={styles.analysisList}>
+                    {structured.action_items?.filter(item => !isHidden(item)).map((item, i) => (
+                      <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
+                    ))}
+                    {structured.concerns?.filter(item => !isHidden(item)).map((item, i) => (
+                      <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} onAdded={markAdded} />
+                    ))}
+                    {structured.vitals?.filter(item => !isHidden(item)).map((item, i) => (
+                      <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </>
