@@ -74,18 +74,19 @@ function addMinutes(value, delta) {
   return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
 }
 
-export default function AddEventForm({ currentDate, onSubmit, onCancel }) {
-  const [date, setDate] = useState(defaultDate(currentDate));
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [startInput, setStartInput] = useState('');
-  const [endInput, setEndInput] = useState('');
-  const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [type, setType] = useState('medication');
-  const [repeat, setRepeat] = useState('none');
-  const [repeatInterval, setRepeatInterval] = useState(2);
-  const [repeatEndDate, setRepeatEndDate] = useState('');
+export default function AddEventForm({ currentDate, onSubmit, onCancel, onDelete, initial }) {
+  const isEdit = !!initial;
+  const [date, setDate] = useState(initial?.date || defaultDate(currentDate));
+  const [startTime, setStartTime] = useState(initial?.time || '');
+  const [endTime, setEndTime] = useState(initial?.endTime || '');
+  const [startInput, setStartInput] = useState(initial?.time ? formatTime(initial.time) : '');
+  const [endInput, setEndInput] = useState(initial?.endTime ? formatTime(initial.endTime) : '');
+  const [title, setTitle] = useState(initial?.title || '');
+  const [subtitle, setSubtitle] = useState(initial?.subtitle || '');
+  const [type, setType] = useState(initial?.type || 'medication');
+  const [repeat, setRepeat] = useState(initial?.repeat || 'none');
+  const [repeatInterval, setRepeatInterval] = useState(initial?.repeatIntervalDays || 2);
+  const [repeatEndDate, setRepeatEndDate] = useState(initial?.repeatEndDate || '');
 
   const commitStart = (raw) => {
     if (!raw.trim()) {
@@ -129,7 +130,7 @@ export default function AddEventForm({ currentDate, onSubmit, onCancel }) {
     const start = parseTime(startInput) ?? startTime;
     const end = parseTime(endInput) ?? endTime;
     onSubmit({
-      id: `e-${Date.now()}`,
+      id: initial?.id || `e-${Date.now()}`,
       date,
       time: start,
       endTime: end,
@@ -142,6 +143,12 @@ export default function AddEventForm({ currentDate, onSubmit, onCancel }) {
         : {}),
       ...(repeat !== 'none' && repeatEndDate ? { repeatEndDate } : {}),
     });
+  };
+
+  const handleDelete = () => {
+    if (!initial) return;
+    if (!window.confirm(`Delete "${initial.title}"? This can't be undone.`)) return;
+    onDelete?.(initial.id);
   };
 
   return (
@@ -254,8 +261,15 @@ export default function AddEventForm({ currentDate, onSubmit, onCancel }) {
         />
       </div>
       <div className={styles.actions}>
+        {isEdit && onDelete && (
+          <button type="button" className={styles.danger} onClick={handleDelete}>
+            Delete
+          </button>
+        )}
         <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit}>Add event</button>
+        <button type="submit" className={styles.submit}>
+          {isEdit ? 'Save changes' : 'Add event'}
+        </button>
       </div>
     </form>
   );

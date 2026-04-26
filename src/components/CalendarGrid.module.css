@@ -57,33 +57,69 @@
   padding: 4px;
   border-left: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  min-height: 52px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  min-height: 96px;
+  position: relative;
 }
 
 .cell.todayCol {
   background: var(--bg-muted);
 }
 
-/* Event blocks — left bar in the type's strong color, fill in the soft tint. */
+/* Event blocks — left bar in the type's strong color, fill in the soft tint.
+   Absolutely positioned within their hour cell so the minute offset of the
+   event maps to vertical placement (e.g. :15 → 25% down the cell). Each chip
+   takes up exactly one quarter of the cell so 4 fifteen-minute events fit. */
 .event {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: calc(25% - 2px);
   border-left: 3px solid;
   border-radius: 4px;
-  padding: 4px 6px 4px 8px;
+  padding: 2px 6px 2px 6px;
   font-size: 11px;
-  line-height: 1.25;
+  line-height: 1.15;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  z-index: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+}
+
+.event:hover {
+  filter: brightness(0.96);
+}
+
+.event:focus-visible {
+  outline: 2px solid var(--accent, #4a78c4);
+  outline-offset: 1px;
 }
 
 .eventTitle {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.eventTime {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+  margin-right: 4px;
 }
 
 .eventSubtitle {
   font-size: 10px;
   opacity: 0.8;
-  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .medication {
@@ -189,6 +225,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.monthEvent:hover {
+  filter: brightness(0.96);
 }
 
 .monthMore {
