@@ -677,6 +677,15 @@ export default function App() {
                     onEditMedication={startEditMedication}
                     onDeleteMedication={deleteMedication}
                   />
+                  <div className="upload-note-row">
+                    <button
+                      type="button"
+                      className="upload-note-btn"
+                      onClick={() => setOpenModal('note')}
+                    >
+                      + Upload doctor's note
+                    </button>
+                  </div>
                   <DoctorNote
                     notes={notes[selectedPatientId] || []}
                     summary={aiSummaries[selectedPatientId]?.data}
@@ -717,7 +726,6 @@ export default function App() {
                     onNext={handleNext}
                     onToday={handleToday}
                     onAddEvent={() => setOpenModal('event')}
-                    onUploadNote={() => setOpenModal('note')}
                   />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}
