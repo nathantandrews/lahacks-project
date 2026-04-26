@@ -29,7 +29,7 @@ CareGiver Hub is a domain-specific AI agent that unifies all of this into a sing
 | **Framework** | Fetch.ai uAgents |
 | **LLM** | ASI-1 Mini (`asi1` model via `https://api.asi1.ai/v1`) |
 | **Agentverse** | Registered via External Integration → Agent Chat Protocol |
-| **Agent Address** | _(paste your `agent1qtqwfh2uv6jgc2u56ytl6vhwp6n8xa85cdvdhjfa3aza77y85eh5zl7g0xf` address here after first run)_ |
+| **Agent Address** | _(paste your `https://portable-cylinder-showdown.ngrok-free.dev/submit` address here after first run)_ |
 
 ### Input / Output Models
 

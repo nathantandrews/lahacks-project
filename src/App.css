@@ -36,7 +36,8 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  overflow: clip;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .layout {
