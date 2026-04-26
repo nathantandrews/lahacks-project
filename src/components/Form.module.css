@@ -115,17 +115,18 @@
 
 .uploadOptions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: var(--space-2);
 }
 
 .uploadOption {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: var(--space-3);
+  justify-content: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--bg-card);

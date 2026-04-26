@@ -44,7 +44,7 @@ function StructuredValue({ label, value }) {
   );
 }
 
-function HistoryItem({ item, i }) {
+function HistoryItem({ item, i, onDeleteNote }) {
   const [insightsOpen, setInsightsOpen] = useState(false);
 
   const structuredEntries = item.structured
@@ -74,6 +74,17 @@ function HistoryItem({ item, i }) {
             {item.location ? ` · ${item.location}` : ''}
           </div>
         </div>
+        {item._category === 'doctor_note' && onDeleteNote && (
+          <button
+            type="button"
+            className={styles.deleteBtn}
+            onClick={() => onDeleteNote(item.id || item._id)}
+            aria-label="Delete doctor's note"
+            title="Delete"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {item.imageUrl && (
@@ -128,7 +139,7 @@ function HistoryItem({ item, i }) {
   );
 }
 
-export default function MedicalHistory({ patient, items }) {
+export default function MedicalHistory({ patient, items, onDeleteNote }) {
   return (
     <section className={styles.wrap}>
       <header className={styles.header}>
@@ -145,7 +156,12 @@ export default function MedicalHistory({ patient, items }) {
       ) : (
         <ul className={styles.list}>
           {(items || []).map((item, i) => (
-            <HistoryItem key={item.id || item._id || i} item={item} i={i} />
+            <HistoryItem
+              key={item.id || item._id || i}
+              item={item}
+              i={i}
+              onDeleteNote={onDeleteNote}
+            />
           ))}
         </ul>
       )}

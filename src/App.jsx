@@ -435,6 +435,12 @@ export default function App() {
         ...prev,
         [selectedPatientId]: (prev[selectedPatientId] || []).filter(n => n.id !== noteId),
       }));
+      setHistory(prev => ({
+        ...prev,
+        [selectedPatientId]: (prev[selectedPatientId] || []).filter(
+          h => !(h._category === 'doctor_note' && (h.id === noteId || h._id === noteId)),
+        ),
+      }));
       // Refresh AI summary after deletion
       setTimeout(() => fetchAiSummary(selectedPatientId), 3000);
     } catch (err) {
@@ -663,6 +669,7 @@ export default function App() {
             <MedicalHistory
               patient={patient}
               items={history[selectedPatientId] || []}
+              onDeleteNote={deleteNote}
             />
           ) : (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>

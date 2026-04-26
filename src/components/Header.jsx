@@ -27,8 +27,26 @@ export default function Header({ user, addMenuItems, view, onViewChange, ref }) 
             type="button"
             className={`${styles.navLink} ${view === 'history' ? styles.navLinkActive : ''}`}
             onClick={() => onViewChange(view === 'history' ? 'dashboard' : 'history')}
+            aria-label={view === 'history' ? 'Back to dashboard' : 'Medical History'}
           >
-            {view === 'history' ? 'Back to dashboard' : 'Medical History'}
+            <svg
+              className={styles.navIcon}
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 7 12 12 15 14" />
+            </svg>
+            <span className={styles.navLabel}>
+              {view === 'history' ? 'Back to dashboard' : 'Medical History'}
+            </span>
           </button>
         )}
         {addMenuItems && <AddMenu items={addMenuItems} />}

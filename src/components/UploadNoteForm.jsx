@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './Form.module.css';
 
 function isoMondayOf(date) {
@@ -29,66 +29,7 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loadin
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadError, setUploadError] = useState(null);
 
-
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState(null);
-
   const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-
-  const stopStream = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-  };
-
-  useEffect(() => stopStream, []);
-
-  const openCamera = async () => {
-    setCameraError(null);
-    setCameraOpen(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      setCameraError(err?.message || 'Could not access camera');
-    }
-  };
-
-  const closeCamera = () => {
-    stopStream();
-    setCameraOpen(false);
-    setCameraError(null);
-  };
-
-  const capturePhoto = () => {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const photoFile = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setFile(photoFile);
-        setPreviewUrl(dataUrl);
-        closeCamera();
-      },
-      'image/jpeg',
-      0.9,
-    );
-  };
 
   const handleFileSelected = async (e) => {
     const f = e.target.files?.[0];
@@ -121,37 +62,6 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loadin
     }
   };
 
-  if (cameraOpen) {
-    return (
-      <div className={styles.form}>
-        <div className={styles.cameraStage}>
-          {cameraError ? (
-            <div className={styles.cameraError}>{cameraError}</div>
-          ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={styles.cameraVideo}
-            />
-          )}
-        </div>
-        <div className={styles.actions}>
-          <button type="button" className={styles.cancel} onClick={closeCamera} disabled={loading}>Cancel</button>
-          <button
-            type="button"
-            className={styles.submit}
-            onClick={capturePhoto}
-            disabled={!!cameraError || loading}
-          >
-            Capture
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.field}>
@@ -175,15 +85,6 @@ export default function UploadNoteForm({ currentDate, onSubmit, onCancel, loadin
           >
             <span className={styles.uploadIcon} aria-hidden>📄</span>
             Upload a file
-          </button>
-          <button
-            type="button"
-            className={styles.uploadOption}
-            onClick={openCamera}
-            disabled={loading}
-          >
-            <span className={styles.uploadIcon} aria-hidden>📷</span>
-            Take photo
           </button>
         </div>
         <input

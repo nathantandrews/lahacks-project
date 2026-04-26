@@ -71,6 +71,9 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .navLink:hover {
@@ -83,4 +86,31 @@
   font-weight: 600;
   background: var(--bg-note);
   border-color: var(--border-strong);
+}
+
+.navIcon {
+  display: none;
+  flex-shrink: 0;
+}
+
+.navLabel {
+  display: inline;
+}
+
+@media (max-width: 720px) {
+  .navLink {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .navIcon {
+    display: inline-block;
+  }
+
+  .navLabel {
+    display: none;
+  }
 }

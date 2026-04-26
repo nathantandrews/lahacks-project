@@ -172,7 +172,9 @@ function NoteItem({ note, onDelete, onEdit, onToggleDone, now }) {
         <button
           type="button"
           className={styles.iconButton}
-          onClick={() => onDelete(note.id)}
+          onClick={() => {
+            if (window.confirm('Delete this note?')) onDelete(note.id);
+          }}
           aria-label="Delete note"
         >
           ×
@@ -352,16 +354,18 @@ export default function PersonalNotes({ notes, onAdd, onDelete, onEdit, onToggle
         <p className={styles.empty}>No notes yet — jot down anything you want to remember.</p>
       ) : (
         <ul className={styles.list}>
-          {notes.map((n) => (
-            <NoteItem
-              key={n.id}
-              note={n}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onToggleDone={onToggleDone}
-              now={now}
-            />
-          ))}
+          {[...notes]
+            .sort((a, b) => Number(!!a.done) - Number(!!b.done))
+            .map((n) => (
+              <NoteItem
+                key={n.id}
+                note={n}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                onToggleDone={onToggleDone}
+                now={now}
+              />
+            ))}
         </ul>
       )}
     </section>

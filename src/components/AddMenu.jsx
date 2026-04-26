@@ -27,9 +27,10 @@ export default function AddMenu({ items }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Add"
       >
         <span className={styles.plus} aria-hidden>+</span>
-        <span>Add</span>
+        <span className={styles.label}>Add</span>
         <span className={styles.chevron} aria-hidden>▾</span>
       </button>
       {open && (
