@@ -76,11 +76,13 @@ function addMinutes(value, delta) {
 
 export default function AddEventForm({ currentDate, onSubmit, onCancel, onDelete, initial }) {
   const isEdit = !!initial;
+  const initialStart = initial?.startTime || initial?.time || '';
+  const initialEnd = initial?.endTime || '';
   const [date, setDate] = useState(initial?.date || defaultDate(currentDate));
-  const [startTime, setStartTime] = useState(initial?.time || '');
-  const [endTime, setEndTime] = useState(initial?.endTime || '');
-  const [startInput, setStartInput] = useState(initial?.time ? formatTime(initial.time) : '');
-  const [endInput, setEndInput] = useState(initial?.endTime ? formatTime(initial.endTime) : '');
+  const [startTime, setStartTime] = useState(initialStart);
+  const [endTime, setEndTime] = useState(initialEnd);
+  const [startInput, setStartInput] = useState(initialStart ? formatTime(initialStart) : '');
+  const [endInput, setEndInput] = useState(initialEnd ? formatTime(initialEnd) : '');
   const [title, setTitle] = useState(initial?.title || '');
   const [subtitle, setSubtitle] = useState(initial?.subtitle || '');
   const [type, setType] = useState(initial?.type || 'medication');
@@ -132,7 +134,7 @@ export default function AddEventForm({ currentDate, onSubmit, onCancel, onDelete
     onSubmit({
       id: initial?.id || `e-${Date.now()}`,
       date,
-      time: start,
+      startTime: start,
       endTime: end,
       title: title.trim(),
       ...(subtitle.trim() ? { subtitle: subtitle.trim() } : {}),

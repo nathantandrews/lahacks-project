@@ -14,6 +14,12 @@ function hourLabel(h) {
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
+// Pull the start time off an event, regardless of whether it's stored as
+// `time` (older shape) or `startTime` (current shape).
+function eventStart(event) {
+  return event?.time || event?.startTime || '';
+}
+
 function parseHour(time) {
   if (!time) return null;
   const [h] = time.split(':');
@@ -41,11 +47,73 @@ function isoDate(d) {
   return d.toISOString().slice(0, 10);
 }
 
+// Expand recurring events into per-day instances within `visibleIsoSet`.
+// Each clone keeps the original `id` so click-to-edit edits the source event;
+// React keys must combine `id + date` to stay unique across instances.
+function expandRecurring(events, visibleIsoSet) {
+  const out = [];
+  events.forEach((e) => {
+    if (!e.date) return;
+    const repeat = e.repeat || 'none';
+    if (repeat === 'none') {
+      if (visibleIsoSet.has(e.date)) out.push(e);
+      return;
+    }
+    const baseDate = new Date(`${e.date}T00:00:00`);
+    const endISO = e.repeatEndDate || null;
+    const interval =
+      repeat === 'custom' ? Math.max(1, Number(e.repeatIntervalDays) || 1) : null;
+    visibleIsoSet.forEach((iso) => {
+      if (iso < e.date) return;
+      if (endISO && iso > endISO) return;
+      const isoDateObj = new Date(`${iso}T00:00:00`);
+      const diffDays = Math.round((isoDateObj - baseDate) / 86400000);
+      if (diffDays < 0) return;
+      let match = false;
+      if (repeat === 'daily') match = true;
+      else if (repeat === 'weekly') match = diffDays % 7 === 0;
+      else if (repeat === 'custom') match = diffDays % interval === 0;
+      if (match) out.push({ ...e, date: iso });
+    });
+  });
+  return out;
+}
+
+function visibleIsosFor(view, currentDate) {
+  if (view === 'day') {
+    const d = new Date(currentDate);
+    d.setHours(0, 0, 0, 0);
+    return new Set([isoDate(d)]);
+  }
+  if (view === 'month') {
+    const month = currentDate.getMonth();
+    const year = currentDate.getFullYear();
+    const firstOfMonth = new Date(year, month, 1);
+    const gridStart = startOfWeek(firstOfMonth);
+    const isos = new Set();
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      isos.add(isoDate(d));
+    }
+    return isos;
+  }
+  // week
+  const monday = startOfWeek(currentDate);
+  const isos = new Set();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    isos.add(isoDate(d));
+  }
+  return isos;
+}
+
 function computeHourRange(events) {
   let startHour = DEFAULT_START_HOUR;
   let endHour = DEFAULT_END_HOUR;
   events.forEach((e) => {
-    const h = parseHour(e.time);
+    const h = parseHour(eventStart(e));
     if (h == null) return;
     if (h < startHour) startHour = h;
     if (h > endHour) endHour = h;
@@ -54,26 +122,29 @@ function computeHourRange(events) {
 }
 
 export default function CalendarGrid({ events, currentDate, todayISO, view = 'week', onEventClick }) {
+  const visibleIsoSet = visibleIsosFor(view, currentDate);
+  const expandedEvents = expandRecurring(events, visibleIsoSet);
+
   const eventsByCell = {};
   const eventsByDate = {};
-  events.forEach((e) => {
-    const h = parseHour(e.time);
+  expandedEvents.forEach((e) => {
+    const h = parseHour(eventStart(e));
     if (h != null) {
       (eventsByCell[`${e.date}|${pad2(h)}`] ||= []).push(e);
     }
     (eventsByDate[e.date] ||= []).push(e);
   });
   Object.values(eventsByCell).forEach((list) =>
-    list.sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    list.sort((a, b) => eventStart(a).localeCompare(eventStart(b)))
   );
 
   if (view === 'day') {
-    return <DayView events={events} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
+    return <DayView events={expandedEvents} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
   }
   if (view === 'month') {
     return <MonthView eventsByDate={eventsByDate} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
   }
-  return <WeekView events={events} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
+  return <WeekView events={expandedEvents} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
 }
 
 function WeekView({ events, eventsByCell, currentDate, todayISO, onEventClick }) {
@@ -122,7 +193,7 @@ function WeekView({ events, eventsByCell, currentDate, todayISO, onEventClick })
                       type="button"
                       key={e.id}
                       className={`${styles.event} ${styles[e.type]}`}
-                      style={{ top: `${(parseMinute(e.time) / 60) * 100}%` }}
+                      style={{ top: `${(parseMinute(eventStart(e)) / 60) * 100}%` }}
                       onClick={() => onEventClick?.(e)}
                     >
                       <div className={styles.eventTitle}>{e.title}</div>
