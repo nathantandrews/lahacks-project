@@ -32,8 +32,23 @@ const STEPS = [
   {
     target: '[data-tour="upload-note"]',
     title: 'Upload Clinical Notes',
-    content: 'Digitize medical records instantly. Upload PDFs of doctor\'s notes, and our AI will extract key clinical insights.',
-    position: 'right'
+    content: 'Digitize medical records instantly. Click this button to open the upload form.',
+    position: 'right',
+    requireAction: 'click'
+  },
+  {
+    target: '[data-tour="file-input"]',
+    title: 'Select Document',
+    content: 'Click here to select the medical PDF from your device.',
+    position: 'bottom',
+    requireAction: 'click'
+  },
+  {
+    target: '[data-tour="confirm-upload"]',
+    title: 'Confirm Upload',
+    content: 'Once selected, click "Upload note". Our AI will then process the document to extract clinical data.',
+    position: 'right',
+    requireAction: 'click'
   },
   {
     target: '[data-tour="doctor-notes"]',
@@ -53,6 +68,12 @@ const STEPS = [
     content: 'Click "Medical History" to explore the chronological timeline of all clinical interactions.',
     position: 'bottom',
     requireAction: 'click'
+  },
+  {
+    target: '[data-tour="history-first"]',
+    title: 'Clinical Timeline',
+    content: 'View summarized doctor\'s notes, medications, and visits in a unified feed. Pulse uses AI to surface the most relevant clinical insights here.',
+    position: 'bottom'
   },
   {
     target: '[data-tour="chat"]',
