@@ -14,17 +14,6 @@ function hourLabel(h) {
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
-function eventTimeLabel(time) {
-  if (!time) return '';
-  const [hStr, mStr] = time.split(':');
-  const h = Number(hStr);
-  const m = Number(mStr);
-  if (Number.isNaN(h) || Number.isNaN(m)) return '';
-  const period = h < 12 ? 'AM' : 'PM';
-  const h12 = ((h + 11) % 12) + 1;
-  return `${h12}:${pad2(m)} ${period}`;
-}
-
 function parseHour(time) {
   if (!time) return null;
   const [h] = time.split(':');
@@ -136,10 +125,7 @@ function WeekView({ events, eventsByCell, currentDate, todayISO, onEventClick })
                       style={{ top: `${(parseMinute(e.time) / 60) * 100}%` }}
                       onClick={() => onEventClick?.(e)}
                     >
-                      <div className={styles.eventTitle}>
-                        <span className={styles.eventTime}>{eventTimeLabel(e.time)}</span>
-                        {e.title}
-                      </div>
+                      <div className={styles.eventTitle}>{e.title}</div>
                       {e.subtitle && <div className={styles.eventSubtitle}>{e.subtitle}</div>}
                     </button>
                   ))}
@@ -179,13 +165,16 @@ function DayView({ events, eventsByCell, currentDate, todayISO, onEventClick }) 
             <div className={styles.timeCell}>{hourLabel(h)}</div>
             <div className={`${styles.cell} ${isToday ? styles.todayCol : ''}`}>
               {cellEvents.map((e) => (
-                <div key={e.id} className={`${styles.event} ${styles[e.type]}`}>
-                  <div className={styles.eventTitle}>
-                    <span className={styles.eventTime}>{eventTimeLabel(e.time)}</span>
-                    <span>{e.title}</span>
-                  </div>
+                <button
+                  type="button"
+                  key={e.id}
+                  className={`${styles.event} ${styles[e.type]}`}
+                  style={{ top: `${(parseMinute(e.time) / 60) * 100}%` }}
+                  onClick={() => onEventClick?.(e)}
+                >
+                  <div className={styles.eventTitle}>{e.title}</div>
                   {e.subtitle && <div className={styles.eventSubtitle}>{e.subtitle}</div>}
-                </div>
+                </button>
               ))}
             </div>
           </Fragment>
