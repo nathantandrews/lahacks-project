@@ -135,45 +135,21 @@ async def seed_mock_data():
 
     if await db.events.count_documents({}) == 0:
         await db.events.insert_many([
-            {"patient_id": "margaret", "id": "e1", "date": "2026-04-20", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e2", "date": "2026-04-20", "time": "08:00", "title": "BP check", "type": "vitals"},
-            {"patient_id": "margaret", "id": "e3", "date": "2026-04-20", "time": "09:00", "title": "Morning walk", "type": "activity"},
-            {"patient_id": "margaret", "id": "e4", "date": "2026-04-20", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e5", "date": "2026-04-20", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e6", "date": "2026-04-20", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e7", "date": "2026-04-21", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e8", "date": "2026-04-21", "time": "08:00", "title": "BP check", "type": "vitals"},
-            {"patient_id": "margaret", "id": "e9", "date": "2026-04-21", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e10", "date": "2026-04-21", "time": "14:00", "title": "PT session", "subtitle": "Ortho · knee", "type": "appointment"},
-            {"patient_id": "margaret", "id": "e11", "date": "2026-04-21", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e12", "date": "2026-04-21", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e13", "date": "2026-04-22", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e14", "date": "2026-04-22", "time": "08:00", "title": "BP check", "type": "vitals"},
-            {"patient_id": "margaret", "id": "e15", "date": "2026-04-22", "time": "09:00", "title": "Dr. Chen", "subtitle": "Nephrology", "type": "appointment"},
-            {"patient_id": "margaret", "id": "e16", "date": "2026-04-22", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e17", "date": "2026-04-22", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e18", "date": "2026-04-22", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e19", "date": "2026-04-23", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e20", "date": "2026-04-23", "time": "08:00", "title": "BP check", "type": "vitals"},
-            {"patient_id": "margaret", "id": "e21", "date": "2026-04-23", "time": "09:00", "title": "Morning walk", "type": "activity"},
-            {"patient_id": "margaret", "id": "e22", "date": "2026-04-23", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e23", "date": "2026-04-23", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e24", "date": "2026-04-23", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e25", "date": "2026-04-24", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e26", "date": "2026-04-24", "time": "08:00", "title": "BP check", "type": "vitals"},
-            {"patient_id": "margaret", "id": "e27", "date": "2026-04-24", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e28", "date": "2026-04-24", "time": "12:00", "title": "Lab: A1C", "type": "lab"},
-            {"patient_id": "margaret", "id": "e29", "date": "2026-04-24", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e30", "date": "2026-04-24", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e31", "date": "2026-04-25", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e32", "date": "2026-04-25", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e33", "date": "2026-04-25", "time": "14:00", "title": "Family visit", "type": "appointment"},
-            {"patient_id": "margaret", "id": "e34", "date": "2026-04-25", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e35", "date": "2026-04-25", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e36", "date": "2026-04-26", "time": "08:00", "title": "Metformin", "type": "medication"},
-            {"patient_id": "margaret", "id": "e37", "date": "2026-04-26", "time": "12:00", "title": "Lunch + log", "type": "meal"},
-            {"patient_id": "margaret", "id": "e38", "date": "2026-04-26", "time": "18:00", "title": "Dinner meds", "type": "medication"},
-            {"patient_id": "margaret", "id": "e39", "date": "2026-04-26", "time": "21:00", "title": "Atorvastatin", "type": "medication"},
+            # Daily medications and checks
+            {"patient_id": "margaret", "id": "e-daily-metformin", "date": "2026-04-20", "startTime": "08:00", "endTime": "08:15", "title": "Metformin", "type": "medication", "repeat": "daily"},
+            {"patient_id": "margaret", "id": "e-daily-bp", "date": "2026-04-20", "startTime": "08:00", "endTime": "08:15", "title": "BP check", "type": "vitals", "repeat": "daily"},
+            {"patient_id": "margaret", "id": "e-daily-lunch", "date": "2026-04-20", "startTime": "12:00", "endTime": "13:00", "title": "Lunch + log", "type": "meal", "repeat": "daily"},
+            {"patient_id": "margaret", "id": "e-daily-dinner", "date": "2026-04-20", "startTime": "18:00", "endTime": "18:15", "title": "Dinner meds", "type": "medication", "repeat": "daily"},
+            {"patient_id": "margaret", "id": "e-daily-atorvastatin", "date": "2026-04-20", "startTime": "21:00", "endTime": "21:15", "title": "Atorvastatin", "type": "medication", "repeat": "daily"},
+
+            # Weekly activities
+            {"patient_id": "margaret", "id": "e-weekly-walk", "date": "2026-04-20", "startTime": "09:00", "endTime": "10:00", "title": "Morning walk", "type": "activity", "repeat": "weekly"},
+            {"patient_id": "margaret", "id": "e-weekly-pt", "date": "2026-04-21", "startTime": "14:00", "endTime": "15:00", "title": "PT session", "subtitle": "Ortho · knee", "type": "appointment", "repeat": "weekly"},
+
+            # One-off appointments
+            {"patient_id": "margaret", "id": "e-once-chen", "date": "2026-04-22", "startTime": "09:00", "endTime": "10:00", "title": "Dr. Chen", "subtitle": "Nephrology", "type": "appointment", "repeat": "none"},
+            {"patient_id": "margaret", "id": "e-once-lab", "date": "2026-04-24", "startTime": "12:00", "endTime": "12:30", "title": "Lab: A1C", "type": "lab", "repeat": "none"},
+            {"patient_id": "margaret", "id": "e-once-family", "date": "2026-04-25", "startTime": "14:00", "endTime": "16:00", "title": "Family visit", "type": "appointment", "repeat": "none"},
         ])
 
     if await db["visit-summaries"].count_documents({}) == 0:

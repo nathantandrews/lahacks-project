@@ -93,7 +93,7 @@ def _format_block(patient: dict, meds: list, notes: list, events: list) -> str:
 
     # Filter to meaningful events only
     filtered = [
-        f"  • {e.get('date','')} {e.get('time','')} — {e.get('title','')} {('(' + e['subtitle'] + ')') if e.get('subtitle') else ''}".strip()
+        f"  • {e.get('date','')} {e.get('startTime','')} - {e.get('endTime','')} — {e.get('title','')} {('(' + e['subtitle'] + ')') if e.get('subtitle') else ''} (Repeats: {e.get('repeat', 'none')})".strip()
         for e in events
         if e.get("type") in _MEANINGFUL_EVENT_TYPES
     ]
