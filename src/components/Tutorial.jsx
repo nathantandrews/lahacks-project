@@ -32,7 +32,7 @@ const STEPS = [
   {
     target: '[data-tour="upload-note"]',
     title: 'Upload Clinical Notes',
-    content: 'Digitize paper records instantly. Upload PDFs or photos of doctor\'s notes, and our AI will extract key medical insights.',
+    content: 'Digitize medical records instantly. Upload PDFs of doctor\'s notes, and our AI will extract key clinical insights.',
     position: 'right'
   },
   {
