@@ -20,3 +20,11 @@ class EventCreate(BaseModel):
     title: str
     subtitle: str = ""
     type: EventType = "appointment"
+
+
+class EventUpdate(BaseModel):
+    date: Optional[str] = None
+    time: Optional[str] = None
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    type: Optional[EventType] = None

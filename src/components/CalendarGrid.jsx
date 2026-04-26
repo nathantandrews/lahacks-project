@@ -1,15 +1,47 @@
 import { Fragment } from 'react';
 import styles from './CalendarGrid.module.css';
 
-const TIME_ROWS = ['08:00', '09:00', '12:00', '14:00', '18:00', '21:00'];
-const TIME_LABELS = { '08:00': '8 AM', '09:00': '9 AM', '12:00': '12 PM', '14:00': '2 PM', '18:00': '6 PM', '21:00': '9 PM' };
+const DEFAULT_START_HOUR = 8;   // 8 AM
+const DEFAULT_END_HOUR = 21;    // 9 PM
 const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const MAX_MONTH_EVENTS = 2;
 
-// Utility: get the Monday of the week containing `date`.
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function hourLabel(h) {
+  if (h === 0) return '12 AM';
+  if (h === 12) return '12 PM';
+  return h < 12 ? `${h} AM` : `${h - 12} PM`;
+}
+
+function eventTimeLabel(time) {
+  if (!time) return '';
+  const [hStr, mStr] = time.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return '';
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${pad2(m)} ${period}`;
+}
+
+function parseHour(time) {
+  if (!time) return null;
+  const [h] = time.split(':');
+  const n = Number(h);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseMinute(time) {
+  if (!time) return 0;
+  const [, m] = time.split(':');
+  const n = Number(m);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function startOfWeek(date) {
   const d = new Date(date);
-  const day = d.getDay(); // 0 = Sun, 1 = Mon, ...
+  const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
@@ -20,31 +52,52 @@ function isoDate(d) {
   return d.toISOString().slice(0, 10);
 }
 
-export default function CalendarGrid({ events, currentDate, todayISO, view = 'week' }) {
-  // Index events by `${date}|${time}` for week/day cells, and by `${date}` for month cells.
+function computeHourRange(events) {
+  let startHour = DEFAULT_START_HOUR;
+  let endHour = DEFAULT_END_HOUR;
+  events.forEach((e) => {
+    const h = parseHour(e.time);
+    if (h == null) return;
+    if (h < startHour) startHour = h;
+    if (h > endHour) endHour = h;
+  });
+  return { startHour, endHour };
+}
+
+export default function CalendarGrid({ events, currentDate, todayISO, view = 'week', onEventClick }) {
   const eventsByCell = {};
   const eventsByDate = {};
   events.forEach((e) => {
-    (eventsByCell[`${e.date}|${e.time}`] ||= []).push(e);
+    const h = parseHour(e.time);
+    if (h != null) {
+      (eventsByCell[`${e.date}|${pad2(h)}`] ||= []).push(e);
+    }
     (eventsByDate[e.date] ||= []).push(e);
   });
+  Object.values(eventsByCell).forEach((list) =>
+    list.sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+  );
 
   if (view === 'day') {
-    return <DayView eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} />;
+    return <DayView events={events} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
   }
   if (view === 'month') {
-    return <MonthView eventsByDate={eventsByDate} currentDate={currentDate} todayISO={todayISO} />;
+    return <MonthView eventsByDate={eventsByDate} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
   }
-  return <WeekView eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} />;
+  return <WeekView events={events} eventsByCell={eventsByCell} currentDate={currentDate} todayISO={todayISO} onEventClick={onEventClick} />;
 }
 
-function WeekView({ eventsByCell, currentDate, todayISO }) {
+function WeekView({ events, eventsByCell, currentDate, todayISO, onEventClick }) {
   const monday = startOfWeek(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
   });
+  const visibleIsos = new Set(days.map(isoDate));
+  const visibleEvents = events.filter((e) => visibleIsos.has(e.date));
+  const { startHour, endHour } = computeHourRange(visibleEvents);
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
 
   return (
     <div className={styles.grid}>
@@ -62,38 +115,53 @@ function WeekView({ eventsByCell, currentDate, todayISO }) {
         );
       })}
 
-      {TIME_ROWS.map((time) => (
-        <Fragment key={time}>
-          <div className={styles.timeCell}>{TIME_LABELS[time]}</div>
-          {days.map((d) => {
-            const iso = isoDate(d);
-            const cellEvents = eventsByCell[`${iso}|${time}`] || [];
-            return (
-              <div
-                key={iso}
-                className={`${styles.cell} ${iso === todayISO ? styles.todayCol : ''}`}
-              >
-                {cellEvents.map((e) => (
-                  <div key={e.id} className={`${styles.event} ${styles[e.type]}`}>
-                    <div className={styles.eventTitle}>{e.title}</div>
-                    {e.subtitle && <div className={styles.eventSubtitle}>{e.subtitle}</div>}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </Fragment>
-      ))}
+      {hours.map((h) => {
+        const hourKey = pad2(h);
+        return (
+          <Fragment key={hourKey}>
+            <div className={styles.timeCell}>{hourLabel(h)}</div>
+            {days.map((d) => {
+              const iso = isoDate(d);
+              const cellEvents = eventsByCell[`${iso}|${hourKey}`] || [];
+              return (
+                <div
+                  key={iso}
+                  className={`${styles.cell} ${iso === todayISO ? styles.todayCol : ''}`}
+                >
+                  {cellEvents.map((e) => (
+                    <button
+                      type="button"
+                      key={e.id}
+                      className={`${styles.event} ${styles[e.type]}`}
+                      style={{ top: `${(parseMinute(e.time) / 60) * 100}%` }}
+                      onClick={() => onEventClick?.(e)}
+                    >
+                      <div className={styles.eventTitle}>
+                        <span className={styles.eventTime}>{eventTimeLabel(e.time)}</span>
+                        {e.title}
+                      </div>
+                      {e.subtitle && <div className={styles.eventSubtitle}>{e.subtitle}</div>}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }
 
-function DayView({ eventsByCell, currentDate, todayISO }) {
+function DayView({ events, eventsByCell, currentDate, todayISO, onEventClick }) {
   const d = new Date(currentDate);
   d.setHours(0, 0, 0, 0);
   const iso = isoDate(d);
   const isToday = iso === todayISO;
   const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const dayEvents = events.filter((e) => e.date === iso);
+  const { startHour, endHour } = computeHourRange(dayEvents);
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
 
   return (
     <div className={`${styles.grid} ${styles.dayGrid}`}>
@@ -103,15 +171,19 @@ function DayView({ eventsByCell, currentDate, todayISO }) {
         <div className={styles.dayNum}>{d.getDate()}</div>
       </div>
 
-      {TIME_ROWS.map((time) => {
-        const cellEvents = eventsByCell[`${iso}|${time}`] || [];
+      {hours.map((h) => {
+        const hourKey = pad2(h);
+        const cellEvents = eventsByCell[`${iso}|${hourKey}`] || [];
         return (
-          <Fragment key={time}>
-            <div className={styles.timeCell}>{TIME_LABELS[time]}</div>
+          <Fragment key={hourKey}>
+            <div className={styles.timeCell}>{hourLabel(h)}</div>
             <div className={`${styles.cell} ${isToday ? styles.todayCol : ''}`}>
               {cellEvents.map((e) => (
                 <div key={e.id} className={`${styles.event} ${styles[e.type]}`}>
-                  <div className={styles.eventTitle}>{e.title}</div>
+                  <div className={styles.eventTitle}>
+                    <span className={styles.eventTime}>{eventTimeLabel(e.time)}</span>
+                    <span>{e.title}</span>
+                  </div>
                   {e.subtitle && <div className={styles.eventSubtitle}>{e.subtitle}</div>}
                 </div>
               ))}
@@ -123,14 +195,12 @@ function DayView({ eventsByCell, currentDate, todayISO }) {
   );
 }
 
-function MonthView({ eventsByDate, currentDate, todayISO }) {
+function MonthView({ eventsByDate, currentDate, todayISO, onEventClick }) {
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
   const firstOfMonth = new Date(year, month, 1);
   const gridStart = startOfWeek(firstOfMonth);
 
-  // Always render 6 weeks so the grid height is stable; days outside the
-  // current month are rendered muted.
   const days = Array.from({ length: 42 }, (_, i) => {
     const d = new Date(gridStart);
     d.setDate(gridStart.getDate() + i);
@@ -157,13 +227,15 @@ function MonthView({ eventsByDate, currentDate, todayISO }) {
             <div className={styles.monthDayNum}>{d.getDate()}</div>
             <div className={styles.monthEvents}>
               {visible.map((e) => (
-                <div
+                <button
+                  type="button"
                   key={e.id}
                   className={`${styles.monthEvent} ${styles[e.type]}`}
                   title={e.title}
+                  onClick={() => onEventClick?.(e)}
                 >
                   {e.title}
-                </div>
+                </button>
               ))}
               {overflow > 0 && (
                 <div className={styles.monthMore}>+{overflow} more</div>

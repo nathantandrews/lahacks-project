@@ -67,6 +67,21 @@
   margin-top: var(--space-3);
 }
 
+.danger {
+  padding: 8px var(--space-4);
+  border: 1px solid #d4a3a3;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: #b04a4a;
+  background: transparent;
+  margin-right: auto;
+}
+
+.danger:hover {
+  background: #fbecec;
+  color: #8c2f2f;
+}
+
 .cancel {
   padding: 8px var(--space-4);
   border: 1px solid var(--border-strong);

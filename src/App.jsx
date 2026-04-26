@@ -162,9 +162,12 @@ export default function App() {
   const [openModal, setOpenModal] = useState(null);
   // When set, the medication modal opens in edit mode for this medication.
   const [editingMedication, setEditingMedication] = useState(null);
+  // When set, the event modal opens in edit mode for this event.
+  const [editingEvent, setEditingEvent] = useState(null);
   const closeModal = () => {
     setOpenModal(null);
     setEditingMedication(null);
+    setEditingEvent(null);
   };
 
   const patient = useMemo(
@@ -273,6 +276,51 @@ export default function App() {
     } catch (error) {
       console.error("Error saving event:", error);
     }
+  };
+
+  const editEvent = async (updatedEvent) => {
+    const { id, ...patch } = updatedEvent;
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (response.ok) {
+        const saved = await response.json();
+        setEvents((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).map((e) =>
+            e.id === id ? saved : e,
+          ),
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+    }
+  };
+
+  const deleteEvent = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events/${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok || response.status === 204) {
+        setEvents((prev) => ({
+          ...prev,
+          [selectedPatientId]: (prev[selectedPatientId] || []).filter((e) => e.id !== id),
+        }));
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
+  const startEditEvent = (event) => {
+    setEditingEvent(event);
+    setOpenModal('event');
   };
 
   // Adds a calendar event without closing any modal (used by DoctorNote AI actions)
@@ -597,6 +645,7 @@ export default function App() {
                     currentDate={currentDate}
                     todayISO={TODAY_ISO}
                     view={view}
+                    onEventClick={startEditEvent}
                   />
                   <Legend items={eventLegend} />
                 </div>
@@ -631,8 +680,19 @@ export default function App() {
       <Modal open={openModal === 'note'} title="Upload doctor's note" onClose={closeModal}>
         <UploadNoteForm currentDate={currentDate} onSubmit={addNote} onCancel={closeModal} loading={isUploadingNote} />
       </Modal>
-      <Modal open={openModal === 'event'} title="Add event" onClose={closeModal}>
-        <AddEventForm currentDate={currentDate} onSubmit={addEvent} onCancel={closeModal} />
+      <Modal
+        open={openModal === 'event'}
+        title={editingEvent ? 'Edit event' : 'Add event'}
+        onClose={closeModal}
+      >
+        <AddEventForm
+          key={editingEvent?.id || 'new'}
+          currentDate={currentDate}
+          initial={editingEvent}
+          onSubmit={editingEvent ? editEvent : addEvent}
+          onDelete={deleteEvent}
+          onCancel={closeModal}
+        />
       </Modal>
 
       <ChatWidget
