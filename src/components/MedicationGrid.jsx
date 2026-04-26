@@ -44,6 +44,25 @@ export default function MedicationGrid({
                 </span>
               )}
             </div>
+            {(m.startDate || m.refillDate || m.endDate) && (
+              <div className={styles.dateRow}>
+                {m.startDate && (
+                  <div className={styles.dateInfo} title="Start date">
+                    <span className={styles.dateLabel}>Start:</span> {m.startDate}
+                  </div>
+                )}
+                {m.refillDate && (
+                  <div className={styles.dateInfo} title="Refill date">
+                    <span className={styles.dateLabel}>Refill:</span> {m.refillDate}
+                  </div>
+                )}
+                {m.endDate && (
+                  <div className={styles.dateInfo} title="End date">
+                    <span className={styles.dateLabel}>End:</span> {m.endDate}
+                  </div>
+                )}
+              </div>
+            )}
           </article>
         ))}
       </div>

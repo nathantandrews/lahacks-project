@@ -92,6 +92,50 @@ export default function App() {
     }
   }
 
+  const handleArchivePatient = async (patientId, currentStatus) => {
+    const status = currentStatus || 'active';
+    const newStatus = status === 'active' ? 'archived' : 'active';
+    const action = newStatus === 'archived' ? 'Archive' : 'Restore';
+    if (!window.confirm(`${action} this patient?`)) return;
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${patientId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        setPatients(prev => prev.map(p => p.id === patientId ? { ...p, status: newStatus } : p));
+      }
+    } catch (err) {
+      console.error('Failed to update patient status:', err);
+    }
+  };
+
+  const handleDeletePatient = async (patientId, patientName) => {
+    if (!window.confirm(`PERMANENTLY DELETE ALL DATA for ${patientName}?\n\nThis will wipe all medications, notes, and history FOREVER. This action cannot be undone.`)) {
+      return;
+    }
+    if (!window.confirm(`FINAL CONFIRMATION: Type "DELETE" is not required, but are you absolutely sure?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${patientId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setPatients(prev => prev.filter(p => p.id !== patientId));
+        if (selectedPatientId === patientId) {
+          const nextPatient = patients.find(p => p.id !== patientId);
+          setSelectedPatientId(nextPatient?.id || null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete patient:', err);
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       const base = 'http://localhost:8000/api';
@@ -624,6 +668,8 @@ export default function App() {
                     patient={patient}
                     conditions={conditions[selectedPatientId] || []}
                     onAddCondition={() => setOpenModal('condition')}
+                    onArchive={() => handleArchivePatient(selectedPatientId, patient.status)}
+                    onDelete={() => handleDeletePatient(selectedPatientId, patient.fullName)}
                   />
                   <MedicationGrid
                     medications={medications[selectedPatientId] || []}

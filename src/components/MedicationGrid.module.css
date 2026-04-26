@@ -121,3 +121,19 @@
   border-radius: 50%;
   background: var(--event-meal);
 }
+.dateRow {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dateInfo {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.dateLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+}

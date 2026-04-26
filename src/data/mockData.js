@@ -58,12 +58,12 @@ export const conditions = {
 
 export const medications = {
   margaret: [
-    { id: 'm1', name: 'Metformin',    dose: '500mg',   schedule: '2x daily',    withFood: true },
-    { id: 'm2', name: 'Lisinopril',   dose: '10mg',    schedule: '1x morning' },
-    { id: 'm3', name: 'Atorvastatin', dose: '20mg',    schedule: '1x evening' },
-    { id: 'm4', name: 'Aspirin',      dose: '81mg',    schedule: '1x daily',    withFood: true },
-    { id: 'm5', name: 'Vitamin D3',   dose: '2000 IU', schedule: '1x daily',    withFood: true },
-    { id: 'm6', name: 'Tylenol',      dose: '500mg',   schedule: 'as needed' },
+    { id: 'm1', name: 'Metformin',    dose: '500mg',   schedule: '2x daily',    withFood: true, startDate: '2026-01-15', refillDate: '2026-05-10' },
+    { id: 'm2', name: 'Lisinopril',   dose: '10mg',    schedule: '1x morning', startDate: '2025-11-20', refillDate: '2026-05-15' },
+    { id: 'm3', name: 'Atorvastatin', dose: '20mg',    schedule: '1x evening', startDate: '2025-06-01', refillDate: '2026-06-01' },
+    { id: 'm4', name: 'Aspirin',      dose: '81mg',    schedule: '1x daily',    withFood: true, startDate: '2024-03-10', refillDate: '2026-09-10' },
+    { id: 'm5', name: 'Vitamin D3',   dose: '2000 IU', schedule: '1x daily',    withFood: true, startDate: '2023-10-05', refillDate: '2026-10-05' },
+    { id: 'm6', name: 'Tylenol',      dose: '500mg',   schedule: 'as needed', startDate: '2026-04-10', refillDate: '2026-07-10', endDate: '2026-05-10' },
   ],
   david: [
     { id: 'm7', name: 'Lisinopril', dose: '20mg', schedule: '1x morning' },

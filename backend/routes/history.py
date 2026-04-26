@@ -166,7 +166,7 @@ async def get_full_history(
         timeline.append(v)
     for m in meds:
         m["_category"] = "medication"
-        m["_sortDate"] = m.get("startedAt", m.get("createdAt", ""))
+        m["_sortDate"] = m.get("startDate", m.get("startedAt", m.get("createdAt", "")))
         timeline.append(m)
 
     # Sort newest first, then trim

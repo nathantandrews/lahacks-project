@@ -194,3 +194,17 @@
   font-size: var(--text-sm);
   color: #2f4f7c;
 }
+
+.medDetail {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.medDates {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dateSep {
+  opacity: 0.5;
+}

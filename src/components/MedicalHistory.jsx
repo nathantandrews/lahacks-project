@@ -49,11 +49,11 @@ function HistoryItem({ item, i }) {
 
   const structuredEntries = item.structured
     ? Object.entries(item.structured).filter(([key, value]) => {
-        if (key === 'summary') return false;
-        if (value === null || value === undefined || value === '') return false;
-        if (Array.isArray(value) && value.length === 0) return false;
-        return true;
-      })
+      if (key === 'summary') return false;
+      if (value === null || value === undefined || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    })
     : [];
 
   return (
@@ -87,7 +87,16 @@ function HistoryItem({ item, i }) {
       ) : item.body ? (
         <p className={styles.body}>{item.body}</p>
       ) : item._category === 'medication' ? (
-        <p className={styles.body}>{item.dose} · {item.schedule}</p>
+        <div className={styles.body}>
+          <div className={styles.medDetail}>{item.dose} · {item.schedule}</div>
+          {(item.startDate || item.endDate) && (
+            <div className={styles.medDates}>
+              {item.startDate && <span>Started: {item.startDate}</span>}
+              {item.startDate && item.endDate && <span className={styles.dateSep}> · </span>}
+              {item.endDate && <span>Ended: {item.endDate}</span>}
+            </div>
+          )}
+        </div>
       ) : null}
 
       {structuredEntries.length > 0 && (

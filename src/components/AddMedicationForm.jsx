@@ -6,6 +6,9 @@ export default function AddMedicationForm({ onSubmit, onCancel, initial }) {
   const [dose, setDose] = useState(initial?.dose || '');
   const [schedule, setSchedule] = useState(initial?.schedule || '');
   const [withFood, setWithFood] = useState(!!initial?.withFood);
+  const [startDate, setStartDate] = useState(initial?.startDate || '');
+  const [refillDate, setRefillDate] = useState(initial?.refillDate || '');
+  const [endDate, setEndDate] = useState(initial?.endDate || '');
   const isEdit = !!initial;
 
   const handleSubmit = (e) => {
@@ -16,7 +19,10 @@ export default function AddMedicationForm({ onSubmit, onCancel, initial }) {
       name: name.trim(),
       dose: dose.trim(),
       schedule: schedule.trim(),
-      ...(withFood ? { withFood: true } : {}),
+      withFood,
+      startDate,
+      refillDate,
+      endDate: endDate || null,
     });
   };
 
@@ -52,6 +58,38 @@ export default function AddMedicationForm({ onSubmit, onCancel, initial }) {
           />
         </div>
       </div>
+      
+      <div className={styles.row}>
+        <div className={styles.field}>
+          <label className={styles.label}>Start Date</label>
+          <input
+            type="date"
+            className={styles.input}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.label}>Refill Date</label>
+          <input
+            type="date"
+            className={styles.input}
+            value={refillDate}
+            onChange={(e) => setRefillDate(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>End Date (Optional)</label>
+        <input
+          type="date"
+          className={styles.input}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+      </div>
+
       <label className={styles.checkboxRow}>
         <input
           type="checkbox"

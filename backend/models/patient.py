@@ -18,6 +18,7 @@ class Patient(BaseModel):
     age: int
     dob: str
     primaryDoctor: str
+    status: str = "active"
     conditions: list[Condition] = []
 
 
@@ -29,3 +30,4 @@ class PatientCreate(BaseModel):
     age: int
     dob: str
     primaryDoctor: str
+    status: str = "active"
