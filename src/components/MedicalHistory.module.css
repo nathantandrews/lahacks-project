@@ -123,28 +123,67 @@
   border-top: 1px solid rgba(74, 120, 196, 0.2);
 }
 
-.analysisTitle {
+.analysisToggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
   color: #4a78c4;
   margin-bottom: 4px;
+  font-family: inherit;
+  line-height: 1;
 }
+.analysisToggle:hover { color: #2f5caa; }
 
 .analysisList {
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
-.analysisList li {
+.insightItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.insightLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b7eb5;
+}
+
+.insightText {
   font-size: var(--text-sm);
-  line-height: 1.4;
   color: #2f4f7c;
+  line-height: 1.5;
+}
+
+.insightSubList {
+  margin: 2px 0 0 12px;
+  padding: 0;
+  list-style: disc;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.insightSubItem {
+  font-size: var(--text-sm);
+  color: #2f4f7c;
+  line-height: 1.5;
 }
 
 .followUp {
