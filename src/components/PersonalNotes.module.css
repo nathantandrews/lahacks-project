@@ -6,6 +6,47 @@
   gap: var(--space-3);
 }
 
+/* Note vs Task toggle */
+.typeToggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.typeBtn {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.typeBtn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.typeBtnActive {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #fff;
+}
+
+/* Item type variants */
+.itemTask {
+  border-left: 3px solid #8b7fb8;
+}
+.itemNote {
+  border-left: 3px solid #6f9bd1;
+}
+.noteIcon {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
 .header {
   display: flex;
   align-items: center;

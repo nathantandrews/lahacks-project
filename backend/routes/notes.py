@@ -2,6 +2,10 @@ import os
 import uuid
 import pytesseract
 from PIL import Image
+
+# Point directly at the Tesseract executable on Windows so PATH doesn't matter
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 from io import BytesIO
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
 from services.mongodb import doctor_notes_col

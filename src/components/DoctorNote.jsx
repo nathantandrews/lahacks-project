@@ -6,8 +6,100 @@ function isMeaningful(body) {
   if (!body || body.trim().length < 30) return false;
   const b = body.trim().toLowerCase();
   if (b.endsWith('.pdf') || b.endsWith('.png') || b.endsWith('.jpg') || b.endsWith('.jpeg')) return false;
-  if (!b.includes(' ')) return false; // filenames have no spaces
+  if (!b.includes(' ')) return false;
   return true;
+}
+
+function guessEventType(text) {
+  const t = text.toLowerCase();
+  if (t.includes('blood pressure') || t.includes('bp') || t.includes('weight') || t.includes('log') || t.includes('vital')) return 'vitals';
+  if (t.includes('walk') || t.includes('exercise') || t.includes('activity')) return 'activity';
+  if (t.includes('lab') || t.includes('test') || t.includes('blood work') || t.includes('recheck')) return 'lab';
+  if (t.includes('doctor') || t.includes('appointment') || t.includes('follow') || t.includes('visit')) return 'appointment';
+  if (t.includes('meal') || t.includes('diet') || t.includes('sodium') || t.includes('eat')) return 'meal';
+  return 'vitals';
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Inline "add to calendar" mini-form that appears when the 📅 button is clicked */
+function AddToCalendar({ title, onAdd, onClose }) {
+  const [date, setDate] = useState(todayIso());
+  const [time, setTime] = useState('08:00');
+  const [repeat, setRepeat] = useState('once');
+
+  const submit = () => {
+    const type = guessEventType(title);
+    const dates = [];
+    if (repeat === 'once') {
+      dates.push(date);
+    } else {
+      // Generate 7 days of dates starting from selected date
+      const start = new Date(date);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        dates.push(d.toISOString().slice(0, 10));
+      }
+    }
+    dates.forEach(d => onAdd({ title, time, date: d, type, subtitle: 'From AI summary' }));
+    onClose();
+  };
+
+  return (
+    <div className={styles.calendarPopover}>
+      <div className={styles.calendarTitle}>📅 Add to calendar</div>
+      <div className={styles.calendarTask}>{title}</div>
+      <div className={styles.calendarFields}>
+        <input type="date" className={styles.calendarInput} value={date} onChange={e => setDate(e.target.value)} />
+        <input type="time" className={styles.calendarInput} value={time} onChange={e => setTime(e.target.value)} />
+      </div>
+      <div className={styles.calendarRepeat}>
+        <label>
+          <input type="radio" name="repeat" value="once" checked={repeat === 'once'} onChange={() => setRepeat('once')} />
+          {' '}Once
+        </label>
+        <label>
+          <input type="radio" name="repeat" value="daily" checked={repeat === 'daily'} onChange={() => setRepeat('daily')} />
+          {' '}Daily this week
+        </label>
+      </div>
+      <div className={styles.calendarActions}>
+        <button className={styles.calendarCancel} onClick={onClose}>Cancel</button>
+        <button className={styles.calendarConfirm} onClick={submit}>Add</button>
+      </div>
+    </div>
+  );
+}
+
+function ActionItem({ text, icon, tagLabel, onAddToCalendar }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className={styles.actionItem}>
+      <div className={styles.actionRow}>
+        {icon && <span className={styles.checkbox}>{icon}</span>}
+        {tagLabel && <span className={styles.tag}>{tagLabel}</span>}
+        <span className={styles.actionText}>{text}</span>
+        {onAddToCalendar && (
+          <button
+            className={styles.calBtn}
+            onClick={() => setOpen(v => !v)}
+            title="Add to calendar"
+            aria-label="Add to calendar"
+          >📅</button>
+        )}
+      </div>
+      {open && (
+        <AddToCalendar
+          title={text}
+          onAdd={onAddToCalendar}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </li>
+  );
 }
 
 function SourceNotes({ notes, onDelete }) {
@@ -25,12 +117,7 @@ function SourceNotes({ notes, onDelete }) {
               <div className={styles.sourceHeader}>
                 <span className={styles.sourceMeta}>{n.author}{n.date ? ` · ${n.date}` : ''}</span>
                 {onDelete && (
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => onDelete(n.id)}
-                    title="Delete this note"
-                    aria-label="Delete note"
-                  >×</button>
+                  <button className={styles.deleteBtn} onClick={() => onDelete(n.id)} title="Delete" aria-label="Delete note">×</button>
                 )}
               </div>
               <span className={styles.sourceBody}>{n.body}</span>
@@ -42,20 +129,15 @@ function SourceNotes({ notes, onDelete }) {
   );
 }
 
-export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote }) {
-  // Filter to only notes with real clinical text — skip filename-only entries
+export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar }) {
   const meaningfulNotes = notes.filter(n => isMeaningful(n.body));
-
   const hasMeaningfulNotes = meaningfulNotes.length > 0;
   const hasSummary = summary?.structured &&
     (summary.structured.summary || summary.structured.action_items?.length);
 
-  // Nothing to show at all
   if (!hasMeaningfulNotes && !loadingSummary) return null;
 
   const structured = summary?.structured || {};
-
-  // Header uses first meaningful note for author/date
   const firstNote = meaningfulNotes[0] || notes[0];
   const authors = [...new Set(meaningfulNotes.map(n => n.author).filter(Boolean))];
   const authorLabel = authors.join(', ') || 'Doctor';
@@ -66,7 +148,6 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
       <span className={styles.icon} aria-hidden>⚕</span>
       <div className={styles.body}>
 
-        {/* Title */}
         <div className={styles.title}>
           Doctor's notes this week
           {authorLabel && (
@@ -76,7 +157,6 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
           )}
         </div>
 
-        {/* AI Summary or fallback */}
         {loadingSummary ? (
           <div className={styles.generating}>
             <span className={styles.pulse} /> Generating AI summary…
@@ -93,19 +173,13 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
                 <div className={styles.analysisTitle}>AI Insights & Action Items</div>
                 <ul className={styles.analysisList}>
                   {structured.action_items?.map((item, i) => (
-                    <li key={`action-${i}`}>
-                      <span className={styles.checkbox}>☐</span> {item}
-                    </li>
+                    <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} />
                   ))}
                   {structured.concerns?.map((item, i) => (
-                    <li key={`concern-${i}`}>
-                      <span className={styles.tag}>Watch</span> {item}
-                    </li>
+                    <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} />
                   ))}
                   {structured.vitals?.map((item, i) => (
-                    <li key={`vital-${i}`}>
-                      <span className={styles.tag}>Vitals</span> {item}
-                    </li>
+                    <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} />
                   ))}
                 </ul>
               </div>
@@ -115,7 +189,6 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
           <p className={styles.text}>{meaningfulNotes[0].body}</p>
         ) : null}
 
-        {/* Source notes with delete buttons */}
         <SourceNotes notes={meaningfulNotes} onDelete={onDeleteNote} />
       </div>
     </aside>

@@ -138,15 +138,21 @@ function NoteItem({ note, onDelete, onEdit, onToggleDone, now }) {
   const remindMs = note.remindAt ? new Date(note.remindAt).getTime() : null;
   const isDue = remindMs != null && remindMs <= now && !note.done;
 
+  const isTask = note.type === 'task';
+
   return (
-    <li className={`${styles.item} ${note.done ? styles.itemDone : ''}`}>
-      <input
-        type="checkbox"
-        className={styles.checkbox}
-        checked={!!note.done}
-        onChange={() => onToggleDone(note.id)}
-        aria-label={note.done ? 'Mark as not done' : 'Mark as done'}
-      />
+    <li className={`${styles.item} ${note.done ? styles.itemDone : ''} ${isTask ? styles.itemTask : styles.itemNote}`}>
+      {isTask ? (
+        <input
+          type="checkbox"
+          className={styles.checkbox}
+          checked={!!note.done}
+          onChange={() => onToggleDone(note.id)}
+          aria-label={note.done ? 'Mark as not done' : 'Mark as done'}
+        />
+      ) : (
+        <span className={styles.noteIcon} aria-hidden>📝</span>
+      )}
       <div className={styles.itemBody}>
         <p className={styles.itemText}>{note.body}</p>
         <span className={styles.itemMeta}>
@@ -232,12 +238,12 @@ export default function PersonalNotes({ notes, onAdd, onDelete, onEdit, onToggle
     (n) => !n.done && n.remindAt && new Date(n.remindAt).getTime() <= now,
   );
 
+  const [entryType, setEntryType] = useState('note'); // 'note' | 'task'
+
   const submit = () => {
     const text = draft.trim();
     if (!text) return;
     const remindAtIso = localInputToIso(draftRemindAt);
-    // Adding a reminder is a real user gesture — a good moment to ask for
-    // notification permission if the user hasn't decided yet.
     if (
       remindAtIso &&
       supportsNotifications &&
@@ -248,6 +254,7 @@ export default function PersonalNotes({ notes, onAdd, onDelete, onEdit, onToggle
     onAdd({
       id: `pn-${Date.now()}`,
       body: text,
+      type: entryType,
       createdAt: new Date().toISOString(),
       remindAt: remindAtIso,
     });
@@ -308,13 +315,30 @@ export default function PersonalNotes({ notes, onAdd, onDelete, onEdit, onToggle
         </div>
       )}
       <div className={styles.composer}>
+        {/* Note vs Task toggle */}
+        <div className={styles.typeToggle}>
+          <button
+            type="button"
+            className={`${styles.typeBtn} ${entryType === 'note' ? styles.typeBtnActive : ''}`}
+            onClick={() => setEntryType('note')}
+          >
+            📝 Note
+          </button>
+          <button
+            type="button"
+            className={`${styles.typeBtn} ${entryType === 'task' ? styles.typeBtnActive : ''}`}
+            onClick={() => setEntryType('task')}
+          >
+            ✅ Task
+          </button>
+        </div>
         <div className={styles.noteBox}>
           <textarea
             className={styles.boxedInput}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add a note or reminder…"
+            placeholder={entryType === 'task' ? 'Add a task or to-do…' : 'Add a note or observation…'}
             rows={2}
           />
           <div className={styles.noteBoxFooter}>

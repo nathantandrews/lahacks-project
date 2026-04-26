@@ -263,6 +263,26 @@ export default function App() {
     }
   };
 
+  // Adds a calendar event without closing any modal (used by DoctorNote AI actions)
+  const addEventDirect = async (newEvent) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/patients/${selectedPatientId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEvent),
+      });
+      if (response.ok) {
+        const savedEvent = await response.json();
+        setEvents((prev) => ({
+          ...prev,
+          [selectedPatientId]: [...(prev[selectedPatientId] || []), savedEvent],
+        }));
+      }
+    } catch (error) {
+      console.error("Error saving event from summary:", error);
+    }
+  };
+
   const editMedication = (med) => {
     setMedications((prev) => ({
       ...prev,
@@ -557,6 +577,7 @@ export default function App() {
                     summary={aiSummaries[selectedPatientId]?.data}
                     loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
                     onDeleteNote={deleteNote}
+                    onAddToCalendar={addEventDirect}
                   />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}
