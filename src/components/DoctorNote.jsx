@@ -86,13 +86,18 @@ function AddToCalendar({ title, onAdd, onClose }) {
   );
 }
 
-function ActionItem({ text, icon, tagLabel, onAddToCalendar, onAdded }) {
+function ActionItem({ text, icon, tagLabel, onAddToCalendar, onAdded, onAddToNotes }) {
   const [open, setOpen] = useState(false);
 
-  const handleAdd = (event) => {
+  const handleCalendarAdd = (event) => {
     onAddToCalendar(event);
     onAdded(text);
     setOpen(false);
+  };
+
+  const handleNoteAdd = () => {
+    onAddToNotes(text);
+    onAdded(text);
   };
 
   return (
@@ -101,20 +106,31 @@ function ActionItem({ text, icon, tagLabel, onAddToCalendar, onAdded }) {
         {icon && <span className={styles.checkbox}>{icon}</span>}
         {tagLabel && <span className={styles.tag}>{tagLabel}</span>}
         <span className={styles.actionText}>{text}</span>
-        {onAddToCalendar && (
-          <button
-            className={styles.calBtn}
-            onClick={() => setOpen(v => !v)}
-            aria-label="Add to calendar"
-          >
-            📅 Add to calendar
-          </button>
-        )}
+        <div className={styles.actionBtns}>
+          {onAddToCalendar && (
+            <button
+              className={styles.calBtn}
+              onClick={() => setOpen(v => !v)}
+              aria-label="Add to calendar"
+            >
+              📅 Add to calendar
+            </button>
+          )}
+          {onAddToNotes && (
+            <button
+              className={styles.calBtn}
+              onClick={handleNoteAdd}
+              aria-label="Add to notes"
+            >
+              📝 Add to notes
+            </button>
+          )}
+        </div>
       </div>
       {open && (
         <AddToCalendar
           title={text}
-          onAdd={handleAdd}
+          onAdd={handleCalendarAdd}
           onClose={() => setOpen(false)}
         />
       )}
@@ -160,12 +176,21 @@ function isAlreadyScheduled(actionText, events) {
   return events.some(ev => ev.title?.trim().toLowerCase() === needle);
 }
 
-export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar, events = [] }) {
+function isAlreadyInNotes(actionText, personalNotes) {
+  if (!personalNotes?.length) return false;
+  const needle = actionText.trim().toLowerCase();
+  return personalNotes.some(n => n.body?.trim().toLowerCase() === needle);
+}
+
+export default function DoctorNote({ notes = [], summary, loadingSummary, onDeleteNote, onAddToCalendar, onAddToNotes, events = [], personalNotes = [] }) {
   const [addedItems, setAddedItems] = useState(new Set());
   const markAdded = (text) => setAddedItems(prev => new Set([...prev, text]));
   const [insightsOpen, setInsightsOpen] = useState(false);
 
-  const isHidden = (text) => addedItems.has(text) || isAlreadyScheduled(text, events);
+  const isHidden = (text) =>
+    addedItems.has(text) ||
+    isAlreadyScheduled(text, events) ||
+    isAlreadyInNotes(text, personalNotes);
 
   const meaningfulNotes = notes.filter(n => isMeaningful(n.body));
   const hasMeaningfulNotes = meaningfulNotes.length > 0;
@@ -217,15 +242,15 @@ export default function DoctorNote({ notes = [], summary, loadingSummary, onDele
                 </button>
                 {insightsOpen && (
                   <ul className={styles.analysisList}>
-                    {structured.action_items?.filter(item => !isHidden(item)).map((item, i) => (
-                      <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
-                    ))}
-                    {structured.concerns?.filter(item => !isHidden(item)).map((item, i) => (
-                      <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} onAdded={markAdded} />
-                    ))}
-                    {structured.vitals?.filter(item => !isHidden(item)).map((item, i) => (
-                      <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} onAdded={markAdded} />
-                    ))}
+                  {structured.action_items?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`action-${i}`} text={item} icon="☐" onAddToCalendar={onAddToCalendar} onAdded={markAdded} onAddToNotes={onAddToNotes} />
+                  ))}
+                  {structured.concerns?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`concern-${i}`} text={item} tagLabel="Watch" onAddToCalendar={null} onAdded={markAdded} onAddToNotes={onAddToNotes} />
+                  ))}
+                  {structured.vitals?.filter(item => !isHidden(item)).map((item, i) => (
+                    <ActionItem key={`vital-${i}`} text={item} tagLabel="Vitals" onAddToCalendar={onAddToCalendar} onAdded={markAdded} onAddToNotes={onAddToNotes} />
+                  ))}
                   </ul>
                 )}
               </div>

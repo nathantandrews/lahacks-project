@@ -605,6 +605,21 @@ export default function App() {
                     onEditMedication={startEditMedication}
                     onDeleteMedication={deleteMedication}
                   />
+                  <DoctorNote
+                    notes={notes[selectedPatientId] || []}
+                    summary={aiSummaries[selectedPatientId]?.data}
+                    loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
+                    onDeleteNote={deleteNote}
+                    onAddToCalendar={addEventDirect}
+                    onAddToNotes={(text) => addPersonalNote({
+                      id: `pn-${Date.now()}`,
+                      body: text,
+                      createdAt: new Date().toISOString(),
+                      remindAt: null,
+                    })}
+                    events={events[selectedPatientId] || []}
+                    personalNotes={personalNotes[selectedPatientId] || []}
+                  />
                   <PersonalNotes
                     notes={personalNotes[selectedPatientId] || []}
                     onAdd={addPersonalNote}
@@ -631,14 +646,6 @@ export default function App() {
                     onToday={handleToday}
                     onAddEvent={() => setOpenModal('event')}
                     onUploadNote={() => setOpenModal('note')}
-                  />
-                  <DoctorNote
-                    notes={notes[selectedPatientId] || []}
-                    summary={aiSummaries[selectedPatientId]?.data}
-                    loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
-                    onDeleteNote={deleteNote}
-                    onAddToCalendar={addEventDirect}
-                    events={events[selectedPatientId] || []}
                   />
                   <CalendarGrid
                     events={events[selectedPatientId] || []}
