@@ -174,8 +174,9 @@ Open [http://localhost:5173](http://localhost:5173).
 ---
 
 ## Team
-Ryan Sahyoun
-Nathan Andrews
+Ryan Sahyoun,
+Nathan Andrews,
+and
 Kaya Lash
 
 Built at LA Hacks 2026.
