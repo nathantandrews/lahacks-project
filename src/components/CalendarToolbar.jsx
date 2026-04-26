@@ -9,10 +9,9 @@ export default function CalendarToolbar({
   onToday,
   onAddEvent,
   onUploadNote,
-  ref,
 }) {
   return (
-    <div ref={ref} className={styles.toolbar}>
+    <div className={styles.toolbar}>
       <div className={styles.left}>
         <button className={styles.navBtn} onClick={onPrev} aria-label="Previous">‹</button>
         <span className={styles.range}>{rangeLabel}</span>
