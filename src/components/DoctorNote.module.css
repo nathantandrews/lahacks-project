@@ -122,6 +122,13 @@
   flex: 1;
 }
 
+.actionBtns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
 .calBtn {
   background: none;
   border: 1px solid #c3d4ee;
@@ -140,6 +147,17 @@
   opacity: 1;
   background: #eef3fc;
   border-color: #4a78c4;
+}
+.calBtnDone {
+  color: #4caf50;
+  border-color: #4caf50;
+  opacity: 0.8;
+  cursor: default;
+}
+.calBtnDone:hover {
+  background: none;
+  border-color: #4caf50;
+  opacity: 0.8;
 }
 
 /* Calendar popover */
