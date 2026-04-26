@@ -37,6 +37,19 @@ async def update_patient_status(patient_id: str, status: str = Body(..., embed=T
         raise HTTPException(status_code=404, detail="Patient not found")
     return {"id": patient_id, "status": status}
 
+@router.patch("/{patient_id}", response_model=dict)
+async def update_patient(patient_id: str, body: PatientCreate):
+    """Update patient details."""
+    result = await patients_col().update_one(
+        {"id": patient_id},
+        {"$set": body.model_dump()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Return updated doc
+    doc = await patients_col().find_one({"id": patient_id}, {"_id": 0})
+    return doc
 
 @router.delete("/{patient_id}", status_code=204)
 async def delete_patient(patient_id: str):

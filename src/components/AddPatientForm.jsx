@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import styles from './Form.module.css';
 
-export default function AddPatientForm({ onSubmit, onCancel }) {
-  const [fullName, setFullName] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [age, setAge] = useState('');
-  const [dob, setDob] = useState('');
-  const [primaryDoctor, setPrimaryDoctor] = useState('');
+export default function AddPatientForm({ initialData, onSubmit, onCancel, onArchive, onDelete }) {
+  const [fullName, setFullName] = useState(initialData?.fullName || '');
+  const [displayName, setDisplayName] = useState(initialData?.displayName || '');
+  const [age, setAge] = useState(initialData?.age || '');
+  const [dob, setDob] = useState(initialData?.dob || '');
+  const [primaryDoctor, setPrimaryDoctor] = useState(initialData?.primaryDoctor || '');
+
+  const isEditing = !!initialData;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!fullName.trim() || !displayName.trim()) return;
 
-    // Generate initials from full name
     const initials = fullName
       .split(' ')
       .map(n => n[0])
@@ -21,6 +22,7 @@ export default function AddPatientForm({ onSubmit, onCancel }) {
       .substring(0, 2);
 
     onSubmit({
+      ...initialData,
       fullName: fullName.trim(),
       displayName: displayName.trim(),
       initials: initials,
@@ -61,7 +63,7 @@ export default function AddPatientForm({ onSubmit, onCancel }) {
             type="number"
             value={age}
             onChange={(e) => setAge(e.target.value)}
-            placeholder="e.g. 72"
+            placeholder="72"
             required
           />
         </div>
@@ -86,9 +88,26 @@ export default function AddPatientForm({ onSubmit, onCancel }) {
           required
         />
       </div>
+
+      {isEditing && (
+        <div className={styles.dangerZone}>
+          <div className={styles.dangerTitle}>Patient Management</div>
+          <div className={styles.dangerActions}>
+            <button type="button" className={styles.secondaryAction} onClick={onArchive}>
+              {initialData.status === 'archived' ? 'Restore Patient' : 'Archive Patient'}
+            </button>
+            <button type="button" className={styles.dangerAction} onClick={onDelete}>
+              Delete All Data
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.submit}>Add patient</button>
+        <button type="submit" className={styles.submit}>
+          {isEditing ? 'Save Changes' : 'Add patient'}
+        </button>
       </div>
     </form>
   );

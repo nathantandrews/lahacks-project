@@ -113,10 +113,14 @@ export default function App() {
   };
 
   const handleDeletePatient = async (patientId, patientName) => {
-    if (!window.confirm(`PERMANENTLY DELETE ALL DATA for ${patientName}?\n\nThis will wipe all medications, notes, and history FOREVER. This action cannot be undone.`)) {
-      return;
-    }
-    if (!window.confirm(`FINAL CONFIRMATION: Type "DELETE" is not required, but are you absolutely sure?`)) {
+    const message = `PERMANENTLY DELETE ALL DATA for ${patientName}?\n\nThis will wipe all medications, notes, and history FOREVER. This action cannot be undone.`;
+    
+    if (!window.confirm(message)) return;
+
+    const confirmation = window.prompt(`To confirm, please type the patient's full name: "${patientName}"`);
+    
+    if (confirmation !== patientName) {
+      if (confirmation !== null) alert("Name did not match. Deletion cancelled.");
       return;
     }
 
@@ -244,21 +248,31 @@ export default function App() {
     closeModal();
   };
 
-  const addPatient = async (newPatient) => {
+  const addPatient = async (patientData) => {
+    const isEdit = !!patientData.id;
+    const method = isEdit ? 'PATCH' : 'POST';
+    const url = isEdit
+      ? `http://localhost:8000/api/patients/${patientData.id}`
+      : 'http://localhost:8000/api/patients/';
+
     try {
-      const response = await fetch(`http://localhost:8000/api/patients`, {
-        method: 'POST',
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPatient),
+        body: JSON.stringify(patientData),
       });
       if (response.ok) {
-        const savedPatient = await response.json();
-        setPatients((prev) => [...prev, savedPatient]);
-        setSelectedPatientId(savedPatient.id);
+        const saved = await response.json();
+        if (isEdit) {
+          setPatients((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+        } else {
+          setPatients((prev) => [...prev, saved]);
+          setSelectedPatientId(saved.id);
+        }
         closeModal();
       }
     } catch (error) {
-      console.error("Error saving patient:", error);
+      console.error('Error saving patient:', error);
     }
   };
 
@@ -668,8 +682,7 @@ export default function App() {
                     patient={patient}
                     conditions={conditions[selectedPatientId] || []}
                     onAddCondition={() => setOpenModal('condition')}
-                    onArchive={() => handleArchivePatient(selectedPatientId, patient.status)}
-                    onDelete={() => handleDeletePatient(selectedPatientId, patient.fullName)}
+                    onEdit={() => setOpenModal('patient')}
                   />
                   <MedicationGrid
                     medications={medications[selectedPatientId] || []}
@@ -746,8 +759,18 @@ export default function App() {
         )}
       </div>
 
-      <Modal open={openModal === 'patient'} title="Add patient" onClose={closeModal}>
-        <AddPatientForm onSubmit={addPatient} onCancel={closeModal} />
+      <Modal
+        open={openModal === 'patient'}
+        title={patient && openModal === 'patient' ? "Edit patient" : "Add patient"}
+        onClose={closeModal}
+      >
+        <AddPatientForm
+          initialData={openModal === 'patient' ? patient : null}
+          onSubmit={addPatient}
+          onArchive={() => handleArchivePatient(selectedPatientId, patient?.status)}
+          onDelete={() => handleDeletePatient(selectedPatientId, patient?.fullName)}
+          onCancel={closeModal}
+        />
       </Modal>
       <Modal
         open={openModal === 'medication'}
