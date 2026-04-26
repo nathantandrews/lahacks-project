@@ -13,6 +13,9 @@
   overflow-y: hidden;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  position: sticky;
+  top: var(--header-h, 0px);
+  z-index: 6;
 }
 
 .tabs::-webkit-scrollbar {

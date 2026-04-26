@@ -509,6 +509,8 @@ export default function App() {
   };
 
   const layoutRef = useRef(null);
+  const headerRef = useRef(null);
+  const tabsRef = useRef(null);
   const [leftWidth, setLeftWidth] = useState(() => {
     const saved = Number(localStorage.getItem('layout-left-width'));
     return Number.isFinite(saved) && saved > 0 ? saved : null;
@@ -518,6 +520,28 @@ export default function App() {
   useEffect(() => {
     if (leftWidth != null) localStorage.setItem('layout-left-width', String(leftWidth));
   }, [leftWidth]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const targets = [
+      [headerRef, '--header-h'],
+      [tabsRef, '--tabs-h'],
+    ];
+    const observers = [];
+    targets.forEach(([ref, varName]) => {
+      const el = ref.current;
+      if (!el) {
+        root.style.setProperty(varName, '0px');
+        return;
+      }
+      const update = () => root.style.setProperty(varName, `${el.offsetHeight}px`);
+      update();
+      const ro = new ResizeObserver(update);
+      ro.observe(el);
+      observers.push(ro);
+    });
+    return () => observers.forEach((ro) => ro.disconnect());
+  }, [page, patient]);
 
   const onSplitterPointerDown = (e) => {
     if (!layoutRef.current) return;
@@ -563,12 +587,14 @@ export default function App() {
     <div className="app">
       <div className="app-card">
         <Header
+          ref={headerRef}
           user={currentUser}
           addMenuItems={addMenuItems}
           view={page}
           onViewChange={setPage}
         />
         <PatientTabs
+          ref={tabsRef}
           patients={patients}
           selectedId={selectedPatientId}
           onSelect={setSelectedPatientId}

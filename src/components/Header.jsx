@@ -1,9 +1,9 @@
 import AddMenu from './AddMenu';
 import styles from './Header.module.css';
 
-export default function Header({ user, addMenuItems, view, onViewChange }) {
+export default function Header({ user, addMenuItems, view, onViewChange, ref }) {
   return (
-    <header className={styles.header}>
+    <header ref={ref} className={styles.header}>
       <div className={styles.left}>
         <span className={styles.plus} aria-hidden>
           <svg

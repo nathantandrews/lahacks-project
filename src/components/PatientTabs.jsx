@@ -1,8 +1,8 @@
 import styles from './PatientTabs.module.css';
 
-export default function PatientTabs({ patients, selectedId, onSelect, onAdd }) {
+export default function PatientTabs({ patients, selectedId, onSelect, onAdd, ref }) {
   return (
-    <nav className={styles.tabs}>
+    <nav ref={ref} className={styles.tabs}>
       {patients.map((p) => (
         <button
           key={p.id}
