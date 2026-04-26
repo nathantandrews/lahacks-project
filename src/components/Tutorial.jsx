@@ -30,6 +30,18 @@ const STEPS = [
     requireAction: 'click'
   },
   {
+    target: '[data-tour="upload-note"]',
+    title: 'Upload Clinical Notes',
+    content: 'Digitize paper records instantly. Upload PDFs or photos of doctor\'s notes, and our AI will extract key medical insights.',
+    position: 'right'
+  },
+  {
+    target: '[data-tour="doctor-notes"]',
+    title: 'AI Clinical Summary',
+    content: 'Pulse automatically cross-references all notes to provide a cohesive summary of the patient\'s clinical status.',
+    position: 'right'
+  },
+  {
     target: '[data-tour="calendar"]',
     title: 'Smart Calendar',
     content: 'Observe the clustered events. Pulse helps you spot overlapping appointments at a glance.',

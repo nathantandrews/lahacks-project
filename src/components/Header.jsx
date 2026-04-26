@@ -1,10 +1,10 @@
 import AddMenu from './AddMenu';
 import styles from './Header.module.css';
 
-export default function Header({ user, addMenuItems, view, onViewChange, onStartTutorial, ref }) {
+export default function Header({ user, addMenuItems, view, onViewChange, onStartTutorial, onLogoClick, ref }) {
   return (
     <header ref={ref} className={styles.header}>
-      <div className={styles.left}>
+      <div className={styles.left} onClick={onLogoClick} style={{ cursor: 'pointer' }}>
         <span className={styles.plus} aria-hidden>
           <svg
             viewBox="0 0 24 24"

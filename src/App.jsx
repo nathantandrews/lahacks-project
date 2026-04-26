@@ -17,6 +17,7 @@ import UploadNoteForm from './components/UploadNoteForm';
 import AddEventForm from './components/AddEventForm';
 import AddPatientForm from './components/AddPatientForm';
 import Tutorial from './components/Tutorial';
+import LandingPage from './components/LandingPage';
 import {
   currentUser,
   patients as mockPatients,
@@ -87,6 +88,37 @@ export default function App() {
   const [aiSummaries, setAiSummaries] = useState({});
   const [history, setHistory] = useState({});
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isExitingDashboard, setIsExitingDashboard] = useState(false);
+
+  const handleEnter = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setShowLanding(false);
+      setIsTransitioning(false);
+    }, 800);
+  };
+
+  const handleStartTour = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setShowLanding(false);
+      setIsTransitioning(false);
+      // Wait for app entrance animation (1s) to finish before showing tutorial
+      setTimeout(() => {
+        setShowTutorial(true);
+      }, 1000);
+    }, 800);
+  };
+
+  const handleGoHome = () => {
+    setIsExitingDashboard(true);
+    setTimeout(() => {
+      setShowLanding(true);
+      setIsExitingDashboard(false);
+    }, 800);
+  };
 
   async function fetchAiSummary(patientId) {
     if (!patientId) return;
@@ -659,16 +691,28 @@ export default function App() {
     { label: 'Add event', onSelect: () => setOpenModal('event') },
   ];
 
+  if (showLanding) {
+    return (
+      <LandingPage 
+        onEnter={handleEnter} 
+        onStartTour={handleStartTour}
+        isLeaving={isTransitioning}
+      />
+    );
+  }
+
   return (
-    <div className="app">
+    <div className={`app-entrance ${isExitingDashboard ? 'app-exit' : ''}`}>
+      <div className="app">
       <div className="app-card">
         <Header
           ref={headerRef}
           user={currentUser}
           addMenuItems={addMenuItems}
-          view={page}
-          onViewChange={setPage}
+          view={view}
+          onViewChange={setView}
           onStartTutorial={() => setShowTutorial(true)}
+          onLogoClick={handleGoHome}
         />
         <PatientTabs
           ref={tabsRef}
@@ -712,6 +756,7 @@ export default function App() {
                   />
                   <div className="upload-note-row">
                     <button
+                      data-tour="upload-note"
                       type="button"
                       className="upload-note-btn"
                       onClick={() => setOpenModal('note')}
@@ -719,7 +764,8 @@ export default function App() {
                       + Upload doctor's note
                     </button>
                   </div>
-                  <DoctorNote
+                  <div data-tour="doctor-notes">
+                    <DoctorNote
                     notes={notes[selectedPatientId] || []}
                     summary={aiSummaries[selectedPatientId]?.data}
                     loadingSummary={aiSummaries[selectedPatientId]?.loading ?? false}
@@ -734,6 +780,7 @@ export default function App() {
                     events={events[selectedPatientId] || []}
                     personalNotes={personalNotes[selectedPatientId] || []}
                   />
+                  </div>
                   <PersonalNotes
                     notes={personalNotes[selectedPatientId] || []}
                     onAdd={addPersonalNote}
@@ -830,6 +877,7 @@ export default function App() {
         patientName={patient?.fullName ?? null}
       />
       {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
+    </div>
     </div>
   );
 }
